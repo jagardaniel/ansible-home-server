@@ -1,0 +1,23 @@
+---
+
+- name: Install packages
+  ansible.builtin.package:
+    name: prometheus
+    state: present
+
+- name: Copy environment file
+  ansible.builtin.template:
+    src: prometheus.j2
+    dest: /etc/default/prometheus
+    mode: "0644"
+  notify:
+    - Restart prometheus
+
+- name: Copy configuration file
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    validate: /usr/bin/promtool check config %s
+    mode: "0644"
+  notify:
+    - Reload prometheus

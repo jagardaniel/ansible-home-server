@@ -1,0 +1,19 @@
+---
+
+unbound_interfaces:
+  - 127.0.0.1
+
+unbound_access_control:
+  - 127.0.0.1 allow
+
+unbound_remote_control: true
+unbound_verbosity: 1
+
+unbound_forward_zones: []
+
+# Example: Forward all queries to Cloudflare
+# unbound_forward_zones:
+#   - name: "."
+#     forward_addresses:
+#       - 1.1.1.1
+#       - 1.0.0.1

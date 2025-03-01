@@ -1,0 +1,9 @@
+---
+
+- name: Apply roles
+  hosts: all
+  become: true
+  roles:
+    - unbound
+    - prometheus_node_exporter
+    - prometheus

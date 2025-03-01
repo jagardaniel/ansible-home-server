@@ -1,0 +1,29 @@
+---
+
+# Unbound configuration - forward all DNS queries to Cloudflare
+unbound_interfaces:
+  - 127.0.0.1
+  - 192.168.0.1
+
+unbound_access_control:
+  - 192.168.0.0/24 allow
+
+unbound_forward_zones:
+  - name: "."
+    forward_addresses:
+      - 1.1.1.1
+      - 1.0.0.1
+
+# Prometheus and node exporter configuration
+prometheus_listen_address: 192.168.0.1:9090
+prometheus_storage_tsdb_retention_time: 400d
+
+prometheus_scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["192.168.0.1:9090"]
+  - job_name: node
+    static_configs:
+      - targets: ["localhost:9100"]
+
+prometheus_node_exporter_listen_address: 127.0.0.1:9100

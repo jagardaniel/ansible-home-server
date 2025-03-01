@@ -1,0 +1,33 @@
+---
+
+- name: Install packages
+  ansible.builtin.package:
+    name:
+      - unbound
+      - unbound-host
+    state: present
+
+- name: Find default configuration files
+  ansible.builtin.find:
+    paths: /etc/unbound/unbound.conf.d
+    patterns: "*.conf"
+    excludes:
+      - unbound.conf
+  register: default_configs
+
+- name: Remove default configuration files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ default_configs['files'] }}"
+  notify:
+    - Restart unbound
+
+- name: Copy configuration
+  ansible.builtin.template:
+    src: unbound.conf.j2
+    dest: /etc/unbound/unbound.conf.d/unbound.conf
+    validate: /usr/sbin/unbound-checkconf %s
+    mode: "0644"
+  notify:
+    - Restart unbound

@@ -1,0 +1,21 @@
+---
+
+unbound_interfaces:
+  - 127.0.0.1
+
+unbound_remote_control: false
+unbound_verbosity: 3
+
+prometheus_node_exporter_listen_address: :9100
+prometheus_listen_address: :9090
+
+prometheus_global_scrape_interval: 2m
+prometheus_global_evaluation_interval: 2m
+
+prometheus_scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+  - job_name: node
+    static_configs:
+      - targets: ["localhost:9100"]

@@ -1,0 +1,35 @@
+server:
+{% for interface in unbound_interfaces %}
+    interface: {{ interface }}
+{% endfor %}
+
+{% for rule in unbound_access_control %}
+    access-control: {{ rule }}
+{% endfor %}
+
+    root-hints: "/usr/share/dns/root.hints"
+    auto-trust-anchor-file: "/var/lib/unbound/root.key"
+
+    qname-minimisation: yes
+    verbosity: {{ unbound_verbosity }}
+
+    # Extended statistics for Munin
+    statistics-interval: 0
+    extended-statistics: yes
+    statistics-cumulative: no
+
+{% if unbound_remote_control %}
+remote-control:
+    control-enable: yes
+    control-interface: /run/unbound.ctl
+{% endif %}
+
+{% if unbound_forward_zones is defined %}
+{% for zone in unbound_forward_zones %}
+forward-zone:
+    name: "{{ zone.name }}"
+{% for address in zone.forward_addresses %}
+    forward-addr: {{ address }}
+{% endfor %}
+{% endfor %}
+{% endif %}

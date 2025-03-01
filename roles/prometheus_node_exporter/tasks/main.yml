@@ -1,0 +1,14 @@
+---
+
+- name: Install packages
+  ansible.builtin.package:
+    name: prometheus-node-exporter
+    state: present
+
+- name: Copy environment file
+  ansible.builtin.template:
+    src: prometheus-node-exporter.j2
+    dest: /etc/default/prometheus-node-exporter
+    mode: "0644"
+  notify:
+    - Restart prometheus-node-exporter
