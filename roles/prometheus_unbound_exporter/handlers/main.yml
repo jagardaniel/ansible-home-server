@@ -1,0 +1,6 @@
+---
+
+- name: Restart prometheus-unbound-exporter
+  ansible.builtin.service:
+    name: prometheus-unbound-exporter
+    state: restarted

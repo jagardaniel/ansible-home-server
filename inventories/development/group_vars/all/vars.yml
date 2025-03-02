@@ -3,7 +3,7 @@
 unbound_interfaces:
   - 127.0.0.1
 
-unbound_remote_control: false
+unbound_remote_control: true
 unbound_verbosity: 3
 
 prometheus_node_exporter_listen_address: :9100
@@ -22,6 +22,9 @@ prometheus_scrape_configs:
   - job_name: teamspeak
     static_configs:
       - targets: ["localhost:9189"]
+  - job_name: unbound
+    static_configs:
+      - targets: ["localhost:9167"]
 
 prometheus_ts3exporter_listen: localhost:9189
 prometheus_ts3exporter_password: "{{ vault_prometheus_ts3exporter_password }}"

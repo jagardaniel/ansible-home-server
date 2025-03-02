@@ -1,0 +1,62 @@
+---
+
+- name: Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Set package version if package is found
+  ansible.builtin.set_fact:
+    current_installed_version: "{{ ansible_facts.packages['unbound_exporter'][0]['version'] }}" # Ugly - we assume that there are only one version installed
+  when: "'unbound_exporter' in ansible_facts.packages"
+
+- name: Set package version to none if package is not installed
+  ansible.builtin.set_fact:
+    current_installed_version: none
+  when: "'unbound_exporter' not in ansible_facts.packages"
+
+# There are probably better ways to do this, but avoid downloading the deb file again if the package is already installed and has the same version
+- name: Download and install deb if version has changed
+  when: prometheus_unbound_exporter_version != current_installed_version
+  block:
+    - name: Create temporary download directory
+      ansible.builtin.tempfile:
+        state: directory
+      register: temp_dir
+
+    - name: Download deb
+      ansible.builtin.get_url:
+        url:
+          "https://github.com/letsencrypt/unbound_exporter/releases/download\
+          /v{{ prometheus_unbound_exporter_version }}/unbound_exporter-v{{ prometheus_unbound_exporter_version }}.x86_64.deb"
+        dest: "{{ temp_dir['path'] }}"
+        mode: "0644"
+        checksum: "{{ prometheus_unbound_exporter_checksum }}"
+
+    - name: Remove previous version
+      ansible.builtin.apt:
+        name: unbound_exporter
+        state: absent
+
+    - name: Install deb
+      ansible.builtin.apt:
+        deb: "{{ temp_dir['path'] }}/unbound_exporter-v{{ prometheus_unbound_exporter_version }}.x86_64.deb"
+  always:
+    - name: Remove temporary download directory
+      ansible.builtin.file:
+        path: "{{ temp_dir['path'] }}"
+        state: absent
+
+- name: Copy service file
+  ansible.builtin.template:
+    src: prometheus-unbound-exporter.service.j2
+    dest: /etc/systemd/system/prometheus-unbound-exporter.service
+    mode: "0644"
+  notify:
+    - Restart prometheus-unbound-exporter
+
+- name: Start and enable service
+  ansible.builtin.systemd_service:
+    name: prometheus-unbound-exporter
+    state: started
+    enabled: true
+    daemon-reload: true
