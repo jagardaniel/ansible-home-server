@@ -1,0 +1,13 @@
+[Unit]
+Description=Teamspeak 3 Prometheus exporter
+
+[Service]
+Type=simple
+User=ts3exporter
+ExecStart=/usr/local/bin/ts3exporter -remote {{ prometheus_ts3exporter_remote }} -listen {{ prometheus_ts3exporter_listen }} -user {{ prometheus_ts3exporter_user }}
+EnvironmentFile=/etc/ts3exporter.env
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -33,9 +33,9 @@ $ ansible-playbook site.yml -K
 [...]
 ```
 
-Same thing but for production:
+Same thing for production but also ask for the vault password (`-J`):
 
 ```bash
-$ ansible-playbook -i inventories/production site.yml -K
+$ $ ansible-playbook -i inventories/production site.yml -K -J
 [...]
 ```

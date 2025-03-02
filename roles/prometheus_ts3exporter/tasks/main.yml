@@ -1,0 +1,103 @@
+---
+
+- name: Add group
+  ansible.builtin.group:
+    name: ts3exporter
+    state: present
+    system: true
+
+- name: Add user
+  ansible.builtin.user:
+    name: ts3exporter
+    state: present
+    system: true
+    createhome: false
+    shell: /usr/sbin/nologin
+    home: /nonexistent
+
+# We don't want Ansible to download and unarchive ts3exporter every time we run the playbook so we need a way to track the
+# current installed version. The binary itself doesn't have a version flag so keep track of it by saving the version number
+# to a file instead. There are probably better ways to do this but this should work good enough for now.
+- name: Check if version file exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/ts3exporter.version
+  register: version_file
+
+- name: Get installed version
+  ansible.builtin.slurp:
+    src: /usr/local/bin/ts3exporter.version
+  register: installed_version
+  when: version_file.stat.exists
+
+- name: Set current installed version fact if version file exists
+  ansible.builtin.set_fact:
+    current_installed_version: "{{ installed_version['content'] | b64decode }}"
+  when: version_file.stat.exists
+
+- name: Set version fact to none if version file does not exist
+  ansible.builtin.set_fact:
+    current_installed_version: none
+  when: not version_file.stat.exists
+
+# -----
+- name: Download and extract archive if version has changed
+  when: prometheus_ts3exporter_version != current_installed_version
+  block:
+    - name: Create temporary download directory
+      ansible.builtin.tempfile:
+        state: directory
+      register: temp_dir
+
+    - name: Download archive
+      ansible.builtin.get_url:
+        url:
+          "https://github.com/wittdennis/ts3exporter/releases/download/{{ prometheus_ts3exporter_version }}\
+          /ts3exporter_{{ prometheus_ts3exporter_version }}_linux_amd64.tar.gz"
+        dest: "{{ temp_dir['path'] }}"
+        mode: "0644"
+        checksum: "{{ prometheus_ts3exporter_checksum }}"
+
+    - name: Extract binary from archive
+      ansible.builtin.unarchive:
+        src: "{{ temp_dir['path'] }}/ts3exporter_{{ prometheus_ts3exporter_version }}_linux_amd64.tar.gz"
+        dest: /usr/local/bin
+        include: ts3exporter
+        mode: "0755"
+        owner: root
+        group: root
+        remote_src: true
+  always:
+    - name: Remove temporary download directory
+      ansible.builtin.file:
+        path: "{{ temp_dir['path'] }}"
+        state: absent
+# -----
+
+- name: Update installed version number
+  ansible.builtin.copy:
+    content: "{{ prometheus_ts3exporter_version }}"
+    dest: /usr/local/bin/ts3exporter.version
+    mode: "0644"
+
+- name: Create environment file with password
+  ansible.builtin.copy:
+    content: "SERVERQUERY_PASSWORD={{ prometheus_ts3exporter_password }}"
+    dest: /etc/ts3exporter.env
+    mode: "0600"
+  notify:
+    - Restart prometheus-ts3exporter
+
+- name: Copy service file
+  ansible.builtin.template:
+    src: prometheus-ts3exporter.service.j2
+    dest: /etc/systemd/system/prometheus-ts3exporter.service
+    mode: "0644"
+  notify:
+    - Restart prometheus-ts3exporter
+
+- name: Start and enable service
+  ansible.builtin.systemd_service:
+    name: prometheus-ts3exporter
+    state: started
+    daemon-reload: true
+    enabled: true

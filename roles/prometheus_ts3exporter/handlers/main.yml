@@ -1,0 +1,6 @@
+---
+
+- name: Restart prometheus-ts3exporter
+  ansible.builtin.service:
+    name: prometheus-ts3exporter
+    state: restarted

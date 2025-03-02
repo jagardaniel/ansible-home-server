@@ -1,0 +1,5 @@
+---
+
+# Vault file not encrypted for the development environment
+
+vault_prometheus_ts3exporter_password: ihFb7b5u

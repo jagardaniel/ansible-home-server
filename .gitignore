@@ -1,0 +1,2 @@
+.ansible/
+inventories/production/group_vars/all/vault.yml

@@ -1,0 +1,10 @@
+---
+
+prometheus_ts3exporter_version: 1.1.4
+prometheus_ts3exporter_checksum: sha256:93b3577d88a188dd88e90182cc8a3840241e58426ea8a5c1cac7a80cdcb9a06f
+
+prometheus_ts3exporter_listen: :9189
+
+prometheus_ts3exporter_remote: localhost:10011
+prometheus_ts3exporter_user: serveradmin
+prometheus_ts3exporter_password: password
