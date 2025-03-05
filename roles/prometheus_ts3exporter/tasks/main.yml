@@ -10,6 +10,7 @@
   ansible.builtin.user:
     name: ts3exporter
     state: present
+    group: ts3exporter
     system: true
     createhome: false
     shell: /usr/sbin/nologin
