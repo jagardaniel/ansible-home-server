@@ -1,0 +1,31 @@
+---
+
+podman_user: podmanager
+podman_user_home: "/home/podmanager"
+
+podman_secrets: []
+# Example:
+# podman_secrets:
+#   - name: database_password
+#     data: "secretpassword"
+
+podman_containers: []
+# Basic example:
+# podman_containers:
+# - name: redis
+#   enabled: true
+#   image: docker.io/library/redis:latest
+#
+# Example with a volume and port. uid/gid needs to be set for rootless containers if you want the files on the volume to have
+# your normal user/group permissions. It should match the uid/gid of the user inside the container.
+# podman_containers:
+# - name: grafana
+#   enabled: false
+#   image: docker.io/grafana/grafana-oss:latest
+#   ports:
+#     - "3000:3000"
+#   volumes:
+#     - "/home/podmanager/volumes/grafana:/var/lib/grafana"
+#   uid: 472
+#   gid: 472
+#   create_volume_dir: true

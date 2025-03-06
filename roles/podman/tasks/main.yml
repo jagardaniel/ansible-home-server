@@ -1,0 +1,81 @@
+---
+
+# Create podman containers. For security reasons it is recommended to run the containers as a non-root user.
+# This works fine for the most part but it can get a little bit tricky (in my opinion) when the container
+# is rootless and you want to use volumes. The files on the volume will then be owned with a subuid and subguid
+# instead of your user/group that you run the container as. So you either have to use 'podman unshare' to access the files
+# or you can use --user and/or --userns to map the user account to a specific uid/gid within the container.
+
+# I played around a litte bit around and one rootless container required both --user and --userns to work, another only --userns.
+# So I don't know the best approach here is so I just apply both flags if both uid and gid is specified for the container in the
+# podman_containers variable.
+
+# Since the containers are managed as systemd user services we need to enable linger for the user so the services starts on boot
+# and stays alive even if the user is not logged in.
+
+- name: Install packages
+  ansible.builtin.package:
+    name:
+      - podman
+      - systemd-container
+    state: present
+
+- name: Add group
+  ansible.builtin.group:
+    name: "{{ podman_user }}"
+    state: present
+
+- name: Create user
+  ansible.builtin.user:
+    name: "{{ podman_user }}"
+    state: present
+    group: "{{ podman_user }}"
+    shell: /bin/bash
+    home: "{{ podman_user_home }}"
+
+- name: Set more restricted home directory permissions
+  ansible.builtin.file:
+    path: "{{ podman_user_home }}"
+    mode: "0700"
+
+# Avoid Ansible warning when becoming an unprivileged user
+- name: Create temporary work directory for Ansible
+  ansible.builtin.file:
+    path: "{{ podman_user_home }}/.ansible/tmp"
+    state: directory
+    owner: "{{ podman_user }}"
+    group: "{{ podman_user }}"
+    mode: "0700"
+
+- name: Enable linger
+  ansible.builtin.command:
+    cmd: "/usr/bin/loginctl enable-linger {{ podman_user }}"
+    creates: "/var/lib/systemd/linger/{{ podman_user }}"
+
+- name: Create podman secrets
+  become: true
+  become_user: "{{ podman_user }}"
+  containers.podman.podman_secret:
+    name: "{{ item.name }}"
+    data: "{{ item.data }}"
+    state: present
+    force: true
+  loop: "{{ podman_secrets }}"
+  no_log: true
+  changed_when: false
+
+- name: Include setup container tasks
+  ansible.builtin.include_tasks:
+    file: setup_container.yml
+  when: item.enabled
+  loop: "{{ podman_containers }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Include remove container tasks
+  ansible.builtin.include_tasks:
+    file: cleanup_container.yml
+  when: not item.enabled
+  loop: "{{ podman_containers }}"
+  loop_control:
+    label: "{{ item.name }}"

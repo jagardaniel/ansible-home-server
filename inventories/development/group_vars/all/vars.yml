@@ -28,3 +28,62 @@ prometheus_scrape_configs:
 
 prometheus_ts3exporter_listen: localhost:9189
 prometheus_ts3exporter_password: "{{ vault_prometheus_ts3exporter_password }}"
+
+podman_user: podguy
+podman_user_home: "/home/podguy"
+
+podman_secrets:
+  - name: ts3_serverquery_password
+    data: "{{ vault_teamspeak3_serverquery_password }}"
+
+podman_containers:
+  - name: ts3server
+    enabled: true
+    image: docker.io/library/teamspeak:latest
+    ports:
+      - "9987:9987/udp"
+      - "192.168.0.80:10011:10011"
+      - "30033:30033"
+    env:
+      TS3SERVER_LICENSE=accept
+    volumes:
+      - "/home/podguy/volumes/ts3server:/var/ts3server"
+    uid: 9987
+    gid: 9987
+    create_volume_dir: true
+
+  - name: ts3exporter
+    enabled: false
+    image: docker.io/denniswitt/ts3exporter:latest
+    ports:
+      - "127.0.0.1:9189:9189"
+    env:
+      REMOTE="192.168.0.80:10011"
+    secrets:
+      - ts3_serverquery_password,type=env,target=SERVERQUERY_PASSWORD
+
+  - name: redis
+    enabled: false
+    image: docker.io/library/redis:latest
+
+  - name: unbound-exporter
+    enabled: false
+    image: docker.io/cyb3rjak3/unbound-exporter:latest
+    ports:
+      - "127.0.0.1:9167:9167"
+    command: "-unbound.ca '' -unbound.cert '' -unbound.host=unix:///var/run/socket/unbound.ctl"
+    volumes:
+      - "/var/run/unbound.ctl:/var/run/socket/unbound.ctl:ro"
+    create_volume_dir: false
+    keep_groups: true
+
+  - name: grafana
+    enabled: false
+    image: docker.io/grafana/grafana-oss:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - "/home/podguy/volumes/grafana:/var/lib/grafana"
+    uid: 472
+    gid: 472
+    create_volume_dir: true

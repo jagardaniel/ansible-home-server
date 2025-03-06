@@ -1,8 +1,10 @@
 ---
 
-- hosts: all
+- name: Apply all roles
+  hosts: all
   become: true
   roles:
+    - podman
     - unbound
     - prometheus_node_exporter
     - prometheus_unbound_exporter

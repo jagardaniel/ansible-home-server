@@ -1,0 +1,48 @@
+---
+
+- name: "Run tasks as {{ podman_user }}"
+  become: true
+  become_user: "{{ podman_user }}"
+  block:
+    - name: "Create volume directory for container: {{ item.name }}"
+      ansible.builtin.file:
+        path: "{{ volume.split(':')[0] }}"
+        state: directory
+        mode: "0755"
+      loop: "{{ item.volumes }}"
+      loop_control:
+        loop_var: volume
+      when: item.create_volume_dir | default(false)
+
+    # This feels a bit messy and there is probably a better way to do this. We need to omit many of the parameters if they are not defined
+    # in the podman_containers dict otherwise this module thinks something has changed every run and re-creates the container.
+    - name: "Create container: {{ item.name }}"
+      containers.podman.podman_container:
+        name: "{{ item.name }}"
+        image: "{{ item.image }}"
+        ports: "{{ item.ports if item.ports is defined else omit }}"
+        volumes: "{{ item.volumes if item.volumes is defined else omit }}"
+        command: "{{ item.command if item.command is defined else omit }}"
+        env: "{{ item.env if item.env is defined else omit }}"
+        secrets: "{{ item.secrets if item.secrets is defined else omit }}"
+        user: "{{ item.uid ~ ':' ~ item.gid if (item.uid is defined and item.gid is defined) else omit }}"
+        userns: "{{ 'keep-id:uid=' ~ item.uid ~ ',gid=' ~ item.gid if (item.uid is defined and item.gid is defined) else omit }}"
+        group_add: "{{ 'keep-groups' if item.keep_groups is defined else omit }}"
+        rm: true
+        state: created
+
+    - name: "Generate systemd unit file for container: {{ item.name }}"
+      containers.podman.podman_generate_systemd:
+        name: "{{ item.name }}"
+        new: true
+        no_header: true
+        restart_policy: always
+        dest: "{{ podman_user_home }}/.config/systemd/user"
+
+    - name: "Start container service: {{ item.name }}"
+      ansible.builtin.systemd_service:
+        name: "container-{{ item.name }}"
+        state: started
+        enabled: true
+        scope: user
+        daemon-reload: true
