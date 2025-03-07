@@ -72,6 +72,14 @@
   loop_control:
     label: "{{ item.name }}"
 
+- name: Include systemd service tasks
+  ansible.builtin.include_tasks:
+    file: systemd_container.yml
+  when: item.enabled
+  loop: "{{ podman_containers }}"
+  loop_control:
+    label: "{{ item.name }}"
+
 - name: Include remove container tasks
   ansible.builtin.include_tasks:
     file: cleanup_container.yml
