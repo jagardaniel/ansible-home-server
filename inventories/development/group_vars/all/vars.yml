@@ -5,6 +5,7 @@ unbound_interfaces:
 
 unbound_remote_control: true
 unbound_verbosity: 3
+unbound_extended_statistics: true
 
 prometheus_node_exporter_listen_address: :9100
 prometheus_listen_address: :9090
@@ -62,12 +63,12 @@ podman_containers:
     secrets:
       - ts3_serverquery_password,type=env,target=SERVERQUERY_PASSWORD
 
-  - name: redis
-    enabled: false
-    image: docker.io/library/redis:latest
+  # - name: redis
+  #   enabled: false
+  #   image: docker.io/library/redis:latest
 
   - name: unbound-exporter
-    enabled: false
+    enabled: true
     image: docker.io/cyb3rjak3/unbound-exporter:latest
     ports:
       - "127.0.0.1:9167:9167"
@@ -77,13 +78,13 @@ podman_containers:
     create_volume_dir: false
     keep_groups: true
 
-  - name: grafana
-    enabled: false
-    image: docker.io/grafana/grafana-oss:latest
-    ports:
-      - "3000:3000"
-    volumes:
-      - "/home/podguy/volumes/grafana:/var/lib/grafana"
-    uid: 472
-    gid: 472
-    create_volume_dir: true
+  # - name: grafana
+  #   enabled: false
+  #   image: docker.io/grafana/grafana-oss:latest
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - "/home/podguy/volumes/grafana:/var/lib/grafana"
+  #   uid: 472
+  #   gid: 472
+  #   create_volume_dir: true

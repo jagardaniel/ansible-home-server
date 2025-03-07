@@ -1,12 +1,14 @@
 ---
 
-- name: Apply all roles
+# TODO: Move other roles to a separate playbook as well
+- name: Apply general roles
   hosts: all
   become: true
   roles:
-    - podman
     - unbound
-    - prometheus_node_exporter
-    - prometheus_unbound_exporter
-    - prometheus_ts3exporter
-    - prometheus
+
+- name: Import monitoring playbook
+  import_playbook: monitoring.yml
+
+- name: Import containers playbook
+  import_playbook: containers.yml

@@ -13,10 +13,9 @@ server:
     qname-minimisation: yes
     verbosity: {{ unbound_verbosity }}
 
-    # Extended statistics for Munin
-    statistics-interval: 0
+{% if unbound_extended_statistics is defined and unbound_extended_statistics %}
     extended-statistics: yes
-    statistics-cumulative: no
+{% endif %}
 
 {% if unbound_remote_control %}
 remote-control:

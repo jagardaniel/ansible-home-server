@@ -1,7 +1,7 @@
 ---
 
 podman_user: podmanager
-podman_user_home: "/home/podmanager"
+podman_user_home: /home/podmanager
 
 podman_secrets: []
 # Example:

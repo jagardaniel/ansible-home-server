@@ -8,6 +8,7 @@ unbound_access_control:
 
 unbound_remote_control: true
 unbound_verbosity: 1
+unbound_extended_statistics: false
 
 unbound_forward_zones: []
 

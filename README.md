@@ -1,6 +1,6 @@
 ## ansible-home-server
 
-A repository with some Ansible playbooks for my home server, mostly for documentation purposes. The server runs Debian Stable and is mainly used as a basic router (nftables/Kea DHCP/unbound). The roles are not intended to cover all available configuration options and the vault files is not included in the repository.
+A repository with some Ansible playbooks for my home server, mostly for documentation purposes. The server runs Debian Stable and is mainly used as a basic router (nftables/Kea DHCP/unbound). The roles are not intended to cover all available configuration options and the vault file for production is not included in the repository.
 
 I use a simple VM as "development" environment (`inventories/development`) to try out the roles before I apply them to my physical server (`inventories/production`).
 
@@ -33,9 +33,16 @@ $ ansible-playbook site.yml -K
 [...]
 ```
 
-Same thing for production but also ask for the vault password (`-J`):
+Apply all roles in the production environment. Also ask for the vault password (`-J`):
 
 ```bash
 $ $ ansible-playbook -i inventories/production site.yml -K -J
+[...]
+```
+
+Only run container related roles in production:
+
+```bash
+$ $ ansible-playbook -i inventories/production container.yml -K -J
 [...]
 ```

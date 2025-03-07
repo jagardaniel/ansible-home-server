@@ -27,6 +27,6 @@
         secrets: "{{ item.secrets if item.secrets is defined else omit }}"
         user: "{{ item.uid ~ ':' ~ item.gid if (item.uid is defined and item.gid is defined) else omit }}"
         userns: "{{ 'keep-id:uid=' ~ item.uid ~ ',gid=' ~ item.gid if (item.uid is defined and item.gid is defined) else omit }}"
-        group_add: "{{ 'keep-groups' if item.keep_groups is defined else omit }}"
+        group_add: "{{ 'keep-groups' if item.keep_groups is defined else omit }}" # TODO: Is set even if item.keep_groups is false
         rm: true
         state: created

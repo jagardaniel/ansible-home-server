@@ -1,0 +1,10 @@
+---
+
+- name: Apply monitoring roles
+  hosts: all
+  become: true
+  roles:
+    - prometheus_node_exporter
+    # - prometheus_unbound_exporter - replaced with container
+    # - prometheus_ts3exporter - replaced with container
+    - prometheus

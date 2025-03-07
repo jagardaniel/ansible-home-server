@@ -8,13 +8,15 @@ unbound_interfaces:
 unbound_access_control:
   - 192.168.0.0/24 allow
 
+unbound_extended_statistics: true
+
 unbound_forward_zones:
   - name: "."
     forward_addresses:
       - 1.1.1.1
       - 1.0.0.1
 
-# Prometheus related configuration
+# Prometheus and node exporter configuration
 prometheus_listen_address: 192.168.0.1:9090
 prometheus_storage_tsdb_retention_time: 400d
 
@@ -33,8 +35,3 @@ prometheus_scrape_configs:
       - targets: ["localhost:9167"]
 
 prometheus_node_exporter_listen_address: localhost:9100
-
-prometheus_ts3exporter_listen: localhost:9189
-prometheus_ts3exporter_password: "{{ vault_prometheus_ts3exporter_password }}"
-
-prometheus_unbound_exporter_listen_address: localhost:9167

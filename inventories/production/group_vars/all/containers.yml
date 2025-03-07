@@ -1,0 +1,31 @@
+---
+
+podman_secrets:
+  - name: ts3_serverquery_password
+    data: "{{ vault_teamspeak3_serverquery_password }}"
+
+podman_containers:
+  # ts3exporter - Provides Prometheus metrics for a TeamSpeak 3 server
+  - name: ts3exporter
+    enabled: true
+    image: docker.io/denniswitt/ts3exporter:1.1.4
+    ports:
+      - "127.0.0.1:9189:9189"
+    env:
+      REMOTE="192.168.0.1:10011"
+    secrets:
+      - ts3_serverquery_password,type=env,target=SERVERQUERY_PASSWORD
+
+  # unbound_exporter - Prometheus metric exporter for the Unbound DNS resolver
+  # The simplest way is to connect via the Unix socket. The user running the container needs permissions to the socket (default root:unbound)
+  # and then run the container with --group-add keep-groups (keep_groups: true).
+  - name: unbound_exporter
+    enabled: true
+    image: docker.io/cyb3rjak3/unbound-exporter:0.4.6
+    ports:
+      - "127.0.0.1:9167:9167"
+    command: "-unbound.ca '' -unbound.cert '' -unbound.host=unix:///var/run/socket/unbound.ctl"
+    volumes:
+      - "/var/run/unbound.ctl:/var/run/socket/unbound.ctl:ro"
+    create_volume_dir: false
+    keep_groups: true
