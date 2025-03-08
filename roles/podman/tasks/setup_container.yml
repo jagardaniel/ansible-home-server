@@ -12,7 +12,9 @@
       loop: "{{ item.volumes }}"
       loop_control:
         loop_var: volume
-      when: item.create_volume_dir | default(false)
+      when:
+        - item.volumes is defined
+        - item.create_volume_dir | default(false) | bool
 
     # This feels a bit messy and there is probably a better way to do this. We need to omit many of the parameters if they are not defined
     # in the podman_containers dict otherwise this module thinks something has changed every run and re-creates the container.
@@ -27,6 +29,6 @@
         secrets: "{{ item.secrets if item.secrets is defined else omit }}"
         user: "{{ item.uid ~ ':' ~ item.gid if (item.uid is defined and item.gid is defined) else omit }}"
         userns: "{{ 'keep-id:uid=' ~ item.uid ~ ',gid=' ~ item.gid if (item.uid is defined and item.gid is defined) else omit }}"
-        group_add: "{{ 'keep-groups' if item.keep_groups is defined else omit }}" # TODO: Is set even if item.keep_groups is false
+        group_add: "{{ item.group_add if item.group_add is defined else omit }}"
         rm: true
         state: created

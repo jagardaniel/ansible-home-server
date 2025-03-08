@@ -66,17 +66,20 @@ podman_containers:
   # - name: redis
   #   enabled: false
   #   image: docker.io/library/redis:latest
+  #
 
   - name: unbound-exporter
     enabled: true
-    image: docker.io/cyb3rjak3/unbound-exporter:latest
+    image: docker.io/cyb3rjak3/unbound-exporter:0.4.6
     ports:
       - "127.0.0.1:9167:9167"
-    command: "-unbound.ca '' -unbound.cert '' -unbound.host=unix:///var/run/socket/unbound.ctl"
+    command:
+      - "-unbound.ca="
+      - "-unbound.cert="
+      - "-unbound.host=unix:///var/run/socket/unbound.ctl"
     volumes:
       - "/var/run/unbound.ctl:/var/run/socket/unbound.ctl:ro"
-    create_volume_dir: false
-    keep_groups: true
+    group_add: keep-groups
 
   # - name: grafana
   #   enabled: false
