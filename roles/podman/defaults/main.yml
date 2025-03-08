@@ -9,6 +9,17 @@ podman_secrets: []
 #   - name: database_password
 #     data: "secretpassword"
 
+podman_pods: []
+# Example:
+# podman_pods:
+#   - name: teamspeak
+#     state: started
+#     userns: "keep-id:uid=9987,gid=9987"
+#     ports:
+#       - "9987:9987/udp"
+#       - "127.0.0.1:9189:9189"
+#       - "30033:30033"
+
 podman_containers: []
 # Basic example:
 # podman_containers:

@@ -43,6 +43,6 @@ $ $ ansible-playbook -i inventories/production site.yml -K -J
 Only run container related roles in production:
 
 ```bash
-$ $ ansible-playbook -i inventories/production container.yml -K -J
+$ $ ansible-playbook -i inventories/production containers.yml -K -J
 [...]
 ```

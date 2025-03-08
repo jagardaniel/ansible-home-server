@@ -64,6 +64,16 @@
   no_log: true
   changed_when: false
 
+- name: Create podman pods
+  become: true
+  become_user: "{{ podman_user }}"
+  containers.podman.podman_pod:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    ports: "{{ item.ports if item.ports is defined else omit }}"
+    userns: "{{ item.userns if item.userns is defined else omit }}"
+  loop: "{{ podman_pods }}"
+
 - name: Include setup container tasks
   ansible.builtin.include_tasks:
     file: setup_container.yml

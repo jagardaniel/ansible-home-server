@@ -37,31 +37,42 @@ podman_secrets:
   - name: ts3_serverquery_password
     data: "{{ vault_teamspeak3_serverquery_password }}"
 
-podman_containers:
-  - name: ts3server
-    enabled: true
-    image: docker.io/library/teamspeak:latest
+podman_pods:
+  - name: teamspeak
+    state: absent
+    userns: "keep-id:uid=9987,gid=9987"
     ports:
       - "9987:9987/udp"
-      - "192.168.0.80:10011:10011"
+      - "127.0.0.1:9189:9189"
       - "30033:30033"
+
+podman_containers:
+  - name: ts3server
+    enabled: false
+    image: docker.io/library/teamspeak:latest
+    # ports:
+    #   - "9987:9987/udp"
+    #   - "192.168.0.80:10011:10011"
+    #   - "30033:30033"
     env:
       TS3SERVER_LICENSE=accept
     volumes:
       - "/home/podguy/volumes/ts3server:/var/ts3server"
     user: "9987:9987"
-    userns: "keep-id:uid=9987,gid=9987"
+    # userns: "keep-id:uid=9987,gid=9987"
     create_volume_dir: true
+    pod: teamspeak
 
   - name: ts3exporter
-    enabled: true
+    enabled: false
     image: docker.io/denniswitt/ts3exporter:latest
-    ports:
-      - "127.0.0.1:9189:9189"
+    # ports:
+    #   - "127.0.0.1:9189:9189"
     env:
-      REMOTE="192.168.0.80:10011"
+      REMOTE="127.0.0.1:10011"
     secrets:
       - ts3_serverquery_password,type=env,target=SERVERQUERY_PASSWORD
+    pod: teamspeak
 
   - name: redis
     enabled: false
