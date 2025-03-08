@@ -38,6 +38,6 @@ podman_containers:
       - "192.168.0.1:3000:3000"
     volumes:
       - "/home/podmanager/volumes/grafana:/var/lib/grafana"
-    uid: 472
-    gid: 472
+    user: "472:472"
+    userns: "keep-id:uid=472,gid=472"
     create_volume_dir: true
