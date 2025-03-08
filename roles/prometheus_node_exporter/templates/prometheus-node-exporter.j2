@@ -2,4 +2,8 @@
 # Due to shell escaping, to pass backslashes for regexes, you need to double
 # them (\\d for \d). If running under systemd, you need to double them again
 # (\\\\d to mean \d), and escape newlines too.
-ARGS="--web.listen-address={{ prometheus_node_exporter_listen_address }}"
+
+# Debian/Ubuntu has a patch that adds /mnt and /media to the list of default excluded mountpoints
+# See this GitHub issue: https://github.com/prometheus/node_exporter/issues/2927
+# "Revert" that patch by overriding the mount-points-exclude flag
+ARGS="--web.listen-address={{ prometheus_node_exporter_listen_address }} --collector.filesystem.mount-points-exclude=\"^/(dev|proc|run|sys|var/lib/docker/.+|var/lib/containers/storage/.+)($|/)\""
