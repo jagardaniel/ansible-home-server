@@ -1,11 +1,31 @@
 ---
 
+interface_external: enp0s3
+interface_internal: enp0s8
+
 unbound_interfaces:
   - 127.0.0.1
 
 unbound_remote_control: true
 unbound_verbosity: 3
 unbound_extended_statistics: true
+
+kea_dhcp4_server_interfaces:
+  - "{{ interface_internal }}"
+
+kea_dhcp4_server_option_data:
+  - name: domain-name-servers
+    data: 192.168.0.1
+  - name: domain-search
+    data: 1.1.1.1
+
+kea_dhcp4_server_subnets:
+  - subnet: 192.168.10.0/24
+    pools:
+      - pool: 192.168.10.100-192.168.10.200
+    option-data:
+      - name: routers
+        data: 192.168.0.1
 
 prometheus_node_exporter_listen_address: :9100
 prometheus_listen_address: :9090
@@ -54,7 +74,7 @@ podman_containers:
     create_volume_dir: true
 
   - name: ts3exporter
-    enabled: false
+    enabled: true
     image: docker.io/denniswitt/ts3exporter:latest
     ports:
       - "127.0.0.1:9189:9189"

@@ -1,0 +1,23 @@
+{
+    "Dhcp4": {
+        "interfaces-config": {
+            "interfaces": {{ kea_dhcp4_server_interfaces | to_json }},
+            "dhcp-socket-type": "raw",
+            "service-sockets-max-retries": 5,
+            "service-sockets-retry-wait-time": 5000
+        },
+
+        "lease-database": {
+            "type": "memfile",
+            "persist": true,
+        },
+
+        "renew-timer": {{ kea_dhcp4_server_renew_timer }},
+        "rebind-timer": {{ kea_dhcp4_server_rebind_timer }},
+        "valid-lifetime": {{ kea_dhcp4_server_valid_lifetime }},
+
+        "option-data": {{ kea_dhcp4_server_option_data | to_nice_json | indent(12, False) }},
+
+        "subnet4": {{ kea_dhcp4_server_subnets | to_nice_json | indent(12, False) }},
+    }
+}

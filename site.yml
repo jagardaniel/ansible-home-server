@@ -6,6 +6,7 @@
   become: true
   roles:
     - unbound
+    - kea_dhcp4_server
 
 - name: Import monitoring playbook
   import_playbook: monitoring.yml

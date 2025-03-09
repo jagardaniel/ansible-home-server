@@ -1,0 +1,22 @@
+---
+
+kea_dhcp4_server_interfaces: []
+
+kea_dhcp4_server_renew_timer: 900
+kea_dhcp4_server_rebind_timer: 1800
+kea_dhcp4_server_valid_lifetime: 3600
+
+kea_dhcp4_server_option_data: []
+# Example:
+# kea_dhcp4_server_option_data:
+#   - name: domain-name-servers
+#     data: 1.1.1.1
+
+kea_dhcp4_server_subnets: []
+# kea_dhcp4_server_subnets:
+#   - subnet: 192.168.10.0/24
+#     pools:
+#       - pool: 192.168.10.100-192.168.10.200
+#     option-data:
+#       - name: routers
+#         data: 192.168.10.1

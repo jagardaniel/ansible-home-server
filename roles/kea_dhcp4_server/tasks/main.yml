@@ -1,0 +1,36 @@
+---
+
+- name: Install package
+  ansible.builtin.package:
+    name: kea-dhcp4-server
+    state: present
+
+# AppArmor only allows the kea-dhcp4 process to read from /etc/kea which means that the validation will always fail since it uses
+# a temporary directory in the remote ansible users home directory. Do this validation in a more manual way instead. Probably worth it
+# since kea-dhcp4 is using JSON as a configuration format.
+- name: Validate configuration
+  block:
+    - name: Copy temporary configuration
+      ansible.builtin.template:
+        src: kea-dhcp4.conf.j2
+        dest: /etc/kea/kea-dhcp4.conf.temp
+        mode: "0644"
+
+    - name: Validate temporary configuration
+      ansible.builtin.command:
+        cmd: /usr/sbin/kea-dhcp4 -t /etc/kea/kea-dhcp4.conf.temp
+      changed_when: false
+
+    - name: Copy validated configuration
+      ansible.builtin.copy:
+        src: /etc/kea/kea-dhcp4.conf.temp
+        dest: /etc/kea/kea-dhcp4.conf
+        mode: "0644"
+        remote_src: true
+      notify:
+        - Restart kea-dhcp4-server
+  always:
+    - name: Remove temporary configuration
+      ansible.builtin.file:
+        path: /etc/kea/kea-dhcp4.conf.temp
+        state: absent
