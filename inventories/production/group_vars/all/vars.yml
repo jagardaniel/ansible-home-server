@@ -16,6 +16,20 @@ unbound_forward_zones:
       - 1.1.1.1
       - 1.0.0.1
 
+# Kea DHCPv4 server settings
+kea_dhcp4_server_interfaces:
+  - eno2
+
+kea_dhcp4_server_subnets:
+  - subnet: 192.168.0.0/24
+    pools:
+      - pool: 192.168.0.100-192.168.0.240
+    option-data:
+      - name: routers
+        data: 192.168.0.1
+      - name: domain-name-servers
+        data: 192.168.0.1
+
 # Prometheus and node exporter configuration
 prometheus_listen_address: 192.168.0.1:9090
 prometheus_storage_tsdb_retention_time: 400d
