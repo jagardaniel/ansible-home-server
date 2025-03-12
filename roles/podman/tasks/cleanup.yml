@@ -19,12 +19,12 @@
         - stop_service.failed == true
         - "'Could not find the requested service' not in stop_service.msg"
 
-    - name: "Remove pod: {{ resource_name }}"
+    - name: "Remove: {{ resource_name }}"
       containers.podman.podman_pod:
         name: "{{ item.name }}"
         state: absent
 
-    - name: "Remove systemd unit file for pod: {{ resource_name }}"
+    - name: "Remove systemd unit file for: {{ resource_name }}"
       ansible.builtin.file:
         path: "{{ podman_user_home }}/.config/systemd/user/{{ resource_name }}.service"
         state: absent
