@@ -5,11 +5,10 @@
 # is rootless and you want to use volumes. The files on the volume will then be owned with a subuid and subguid
 # instead of your user/group that you run the container as. So you either have to use 'podman unshare' to access the files
 # or you can use --user and/or --userns to map the user account to a specific uid/gid within the container.
-
-# I played around a litte bit around and one rootless container required both --user and --userns to work, another only --userns.
-# So I don't know the best approach here is so I just apply both flags if both uid and gid is specified for the container in the
-# podman_containers variable.
-
+#
+# If we use a pod to group together multiple containers the systemd service file for that pod controls all containers inside it.
+# Each container still has to be created but we don't need to generate and control systemd services for them individually.
+#
 # Since the containers are managed as systemd user services we need to enable linger for the user so the services starts on boot
 # and stays alive even if the user is not logged in.
 
@@ -73,6 +72,14 @@
   no_log: true
   changed_when: false
 
+- name: Include setup pods tasks
+  ansible.builtin.include_tasks:
+    file: setup_pod.yml
+  when: item.enabled
+  loop: "{{ podman_pods }}"
+  loop_control:
+    label: "{{ item.name }}"
+
 - name: Include setup container tasks
   ansible.builtin.include_tasks:
     file: setup_container.yml
@@ -81,18 +88,44 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: Include systemd service tasks
+# All containers in a pod are controlled by the "main" pod service.
+- name: Include systemd pod service tasks
   ansible.builtin.include_tasks:
-    file: systemd_container.yml
+    file: systemd.yml
   when: item.enabled
+  loop: "{{ podman_pods }}"
+  loop_control:
+    label: "{{ item.name }}"
+  vars:
+    resource_type: pod
+
+# Setup systemd service if the container does not belong to a pod
+- name: Include systemd container service tasks
+  ansible.builtin.include_tasks:
+    file: systemd.yml
+  when: item.enabled and item.pod is undefined
   loop: "{{ podman_containers }}"
   loop_control:
     label: "{{ item.name }}"
+  vars:
+    resource_type: container
 
-- name: Include remove container tasks
+- name: Include cleanup pod tasks
   ansible.builtin.include_tasks:
-    file: cleanup_container.yml
+    file: cleanup.yml
+  when: not item.enabled
+  loop: "{{ podman_pods }}"
+  loop_control:
+    label: "{{ item.name }}"
+  vars:
+    resource_type: pod
+
+- name: Include cleanup container tasks
+  ansible.builtin.include_tasks:
+    file: cleanup.yml
   when: not item.enabled
   loop: "{{ podman_containers }}"
   loop_control:
     label: "{{ item.name }}"
+  vars:
+    resource_type: container

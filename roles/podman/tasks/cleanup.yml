@@ -1,13 +1,16 @@
 ---
 
+- name: Set name with resource type
+  ansible.builtin.set_fact:
+    resource_name: "{{ resource_type }}-{{ item.name }}"
 
 - name: "Run tasks as {{ podman_user }}"
   become: true
   become_user: "{{ podman_user }}"
   block:
-    - name: "Stop and disable container service: {{ item.name }}"
+    - name: "Stop and disable service: {{ resource_name }}"
       ansible.builtin.systemd_service:
-        name: "container-{{ item.name }}"
+        name: "{{ resource_name }}"
         state: stopped
         enabled: false
         scope: user
@@ -16,19 +19,14 @@
         - stop_service.failed == true
         - "'Could not find the requested service' not in stop_service.msg"
 
-    - name: "Remove container: {{ item.name }}"
-      containers.podman.podman_container:
+    - name: "Remove pod: {{ resource_name }}"
+      containers.podman.podman_pod:
         name: "{{ item.name }}"
         state: absent
 
-    - name: "Remove container image: {{ item.name }}"
-      containers.podman.podman_image:
-        name: "{{ item.name }}"
-        state: absent
-
-    - name: "Remove systemd unit file for container: {{ item.name }}"
+    - name: "Remove systemd unit file for pod: {{ resource_name }}"
       ansible.builtin.file:
-        path: "{{ podman_user_home }}/.config/systemd/user/container-{{ item.name }}.service"
+        path: "{{ podman_user_home }}/.config/systemd/user/{{ resource_name }}.service"
         state: absent
 
     - name: Reload systemd

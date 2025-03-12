@@ -16,5 +16,6 @@
     user: "{{ item.user if item.user is defined else omit }}"
     userns: "{{ item.userns if item.userns is defined else omit }}"
     group_add: "{{ item.group_add if item.group_add is defined else omit }}"
+    pod: "{{ item.pod if item.pod is defined else omit }}"
     rm: true
     state: created

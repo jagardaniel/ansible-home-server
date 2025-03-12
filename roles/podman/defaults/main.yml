@@ -6,6 +6,17 @@ podman_user_home: /home/podmanager
 # List of directories that need to be created. Has to exist before a container is started with a bind mount.
 podman_volume_dirs: []
 
+podman_pods: []
+# Example:
+# podman_pods:
+#   - name: teamspeak
+#     enabled: true
+#     userns: "keep-id:uid=9987,gid=9987"
+#     ports:
+#       - "9987:9987/udp"
+#       - "127.0.0.1:9189:9189"
+#       - "30033:30033"
+
 podman_secrets: []
 # Example:
 # podman_secrets:

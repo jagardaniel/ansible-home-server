@@ -1,0 +1,35 @@
+---
+
+- name: Set name with resource type
+  ansible.builtin.set_fact:
+    resource_name: "{{ resource_type }}-{{ item.name }}"
+
+- name: "Run tasks as {{ podman_user }}"
+  become: true
+  become_user: "{{ podman_user }}"
+  block:
+    - name: "Generate systemd unit file for: {{ resource_name }}"
+      containers.podman.podman_generate_systemd:
+        name: "{{ item.name }}"
+        new: true
+        no_header: true
+        restart_policy: always
+        dest: "{{ podman_user_home }}/.config/systemd/user"
+      register: generate_systemd
+
+    # I could not figure out a way to use dynamic names for a handler with notify, so do the restart here in the task instead
+    - name: Restart service if needed
+      ansible.builtin.systemd_service:
+        name: "{{ resource_name }}"
+        state: restarted
+        scope: user
+        daemon-reload: true
+      when: generate_systemd is changed
+
+    - name: "Start pod service: {{ resource_name }}"
+      ansible.builtin.systemd_service:
+        name: "{{ resource_name }}"
+        state: started
+        enabled: true
+        scope: user
+        daemon-reload: true
