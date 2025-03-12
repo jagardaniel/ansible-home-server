@@ -15,6 +15,7 @@
         src: kea-dhcp4.conf.j2
         dest: /etc/kea/kea-dhcp4.conf.temp
         mode: "0644"
+      changed_when: false
 
     - name: Validate temporary configuration
       ansible.builtin.command:
@@ -34,3 +35,4 @@
       ansible.builtin.file:
         path: /etc/kea/kea-dhcp4.conf.temp
         state: absent
+      changed_when: false
