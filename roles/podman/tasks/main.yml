@@ -52,6 +52,15 @@
     cmd: "/usr/bin/loginctl enable-linger {{ podman_user }}"
     creates: "/var/lib/systemd/linger/{{ podman_user }}"
 
+- name: Create volume directories
+  become: true
+  become_user: "{{ podman_user }}"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ podman_volume_dirs }}"
+
 - name: Create podman secrets
   become: true
   become_user: "{{ podman_user }}"

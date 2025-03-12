@@ -1,8 +1,13 @@
 ---
 
+__volume_dir: "/home/podmanager/volumes"
+
 podman_secrets:
   - name: ts3_serverquery_password
     data: "{{ vault_teamspeak3_serverquery_password }}"
+
+podman_volume_dirs:
+  - "{{ __volume_dir }}/grafana"
 
 podman_containers:
   # ts3exporter - Provides Prometheus metrics for a TeamSpeak 3 server
@@ -37,7 +42,6 @@ podman_containers:
     ports:
       - "192.168.0.1:3000:3000"
     volumes:
-      - "/home/podmanager/volumes/grafana:/var/lib/grafana"
+      - "{{ __volume_dir }}/grafana:/var/lib/grafana"
     user: "472:472"
     userns: "keep-id:uid=472,gid=472"
-    create_volume_dir: true

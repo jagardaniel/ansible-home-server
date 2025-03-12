@@ -3,6 +3,9 @@
 podman_user: podmanager
 podman_user_home: /home/podmanager
 
+# List of directories that need to be created. Has to exist before a container is started with a bind mount.
+podman_volume_dirs: []
+
 podman_secrets: []
 # Example:
 # podman_secrets:
@@ -26,6 +29,5 @@ podman_containers: []
 #     - "3000:3000"
 #   volumes:
 #     - "/home/podmanager/volumes/grafana:/var/lib/grafana"
-#   uid: 472
-#   gid: 472
-#   create_volume_dir: true
+#   user: "472:472"
+#   userns: "keep-id:uid=472,gid=472"

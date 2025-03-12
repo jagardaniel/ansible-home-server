@@ -1,34 +1,20 @@
 ---
 
-- name: "Run tasks as {{ podman_user }}"
+# This feels a bit messy and there is probably a better way to do this. We need to omit many of the parameters if they are not defined
+# in the podman_containers dict otherwise this module thinks something has changed every run and re-creates the container.
+- name: "Create container: {{ item.name }}"
   become: true
   become_user: "{{ podman_user }}"
-  block:
-    - name: "Create volume directory for container: {{ item.name }}"
-      ansible.builtin.file:
-        path: "{{ volume.split(':')[0] }}"
-        state: directory
-        mode: "0755"
-      loop: "{{ item.volumes }}"
-      loop_control:
-        loop_var: volume
-      when:
-        - item.volumes is defined
-        - item.create_volume_dir | default(false) | bool
-
-    # This feels a bit messy and there is probably a better way to do this. We need to omit many of the parameters if they are not defined
-    # in the podman_containers dict otherwise this module thinks something has changed every run and re-creates the container.
-    - name: "Create container: {{ item.name }}"
-      containers.podman.podman_container:
-        name: "{{ item.name }}"
-        image: "{{ item.image }}"
-        ports: "{{ item.ports if item.ports is defined else omit }}"
-        volumes: "{{ item.volumes if item.volumes is defined else omit }}"
-        command: "{{ item.command if item.command is defined else omit }}"
-        env: "{{ item.env if item.env is defined else omit }}"
-        secrets: "{{ item.secrets if item.secrets is defined else omit }}"
-        user: "{{ item.user if item.user is defined else omit }}"
-        userns: "{{ item.userns if item.userns is defined else omit }}"
-        group_add: "{{ item.group_add if item.group_add is defined else omit }}"
-        rm: true
-        state: created
+  containers.podman.podman_container:
+    name: "{{ item.name }}"
+    image: "{{ item.image }}"
+    ports: "{{ item.ports if item.ports is defined else omit }}"
+    volumes: "{{ item.volumes if item.volumes is defined else omit }}"
+    command: "{{ item.command if item.command is defined else omit }}"
+    env: "{{ item.env if item.env is defined else omit }}"
+    secrets: "{{ item.secrets if item.secrets is defined else omit }}"
+    user: "{{ item.user if item.user is defined else omit }}"
+    userns: "{{ item.userns if item.userns is defined else omit }}"
+    group_add: "{{ item.group_add if item.group_add is defined else omit }}"
+    rm: true
+    state: created
