@@ -1,10 +1,5 @@
 ---
-
 # Create podman containers. For security reasons it is recommended to run the containers as a non-root user.
-# This works fine for the most part but it can get a little bit tricky (in my opinion) when the container
-# is rootless and you want to use volumes. The files on the volume will then be owned with a subuid and subguid
-# instead of your user/group that you run the container as. So you either have to use 'podman unshare' to access the files
-# or you can use --user and/or --userns to map the user account to a specific uid/gid within the container.
 #
 # If we use a pod to group together multiple containers the systemd service file for that pod controls all containers inside it.
 # Each container still has to be created but we don't need to generate and control systemd services for them individually.

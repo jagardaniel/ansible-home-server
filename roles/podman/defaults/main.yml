@@ -1,7 +1,7 @@
 ---
 
-podman_user: podmanager
-podman_user_home: /home/podmanager
+podman_user: podman
+podman_user_home: /home/podman
 
 # List of directories that need to be created. Has to exist before a container is started with a bind mount.
 podman_volume_dirs: []

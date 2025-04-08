@@ -1,5 +1,4 @@
 ---
-
 # TODO: Move other roles to a separate playbook as well
 - name: Apply general roles
   hosts: all
@@ -7,9 +6,7 @@
   roles:
     - unbound
     - kea_dhcp4_server
-
-- name: Import monitoring playbook
-  import_playbook: monitoring.yml
+    - prometheus_node_exporter
 
 - name: Import containers playbook
   import_playbook: containers.yml
