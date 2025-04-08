@@ -1,0 +1,13 @@
+[Unit]
+Description=TeamSpeak 3 Prometheus metrics exporter
+After=ts3server.service
+
+[Container]
+Image=docker.io/denniswitt/ts3exporter:1.1.4
+Environment=REMOTE=127.0.0.1:10011
+Secret=ts3_serverquery_password,type=env,target=SERVERQUERY_PASSWORD
+Pod=teamspeak3.pod
+
+[Service]
+Restart=always
+RestartSec=5

@@ -1,0 +1,12 @@
+[Unit]
+Description=TeamSpeak 3 Server
+
+[Container]
+Image=docker.io/library/teamspeak:3.13.7
+Volume=teamspeak3-data:/var/ts3server
+Environment=TS3SERVER_LICENSE=accept
+Pod=teamspeak3.pod
+
+[Service]
+Restart=always
+RestartSec=5

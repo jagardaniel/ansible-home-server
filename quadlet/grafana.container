@@ -1,0 +1,14 @@
+[Unit]
+Description=Grafana OSS
+
+[Container]
+Image=docker.io/grafana/grafana-oss:11.6.0
+PublishPort=192.168.0.1:3000:3000
+Volume=grafana-data:/var/lib/grafana
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

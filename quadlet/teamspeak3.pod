@@ -1,0 +1,14 @@
+[Unit]
+Description=TeamSpeak 3 Pod
+
+[Pod]
+PublishPort=9987:9987/udp
+PublishPort=30033:30033
+PublishPort=192.168.0.1:9189:9189
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

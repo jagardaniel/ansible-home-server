@@ -1,0 +1,16 @@
+[Unit]
+Description=Prometheus metrics exporter for the Unbound DNS resolver
+
+[Container]
+Image=docker.io/cyb3rjak3/unbound-exporter:0.4.6
+Exec=-unbound.ca="" -unbound.cert="" -unbound.host="unix:///var/run/socket/unbound.ctl"
+PublishPort=192.168.0.1:9167:9167
+Volume=/var/run/unbound.ctl:/var/run/socket/unbound.ctl:ro
+GroupAdd=keep-groups
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
