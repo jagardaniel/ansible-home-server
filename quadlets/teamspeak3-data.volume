@@ -1,0 +1,4 @@
+[Unit]
+Description=TeamSpeak 3 server data volume
+
+[Volume]
