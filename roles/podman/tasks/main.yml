@@ -1,11 +1,4 @@
 ---
-# Create podman containers. For security reasons it is recommended to run the containers as a non-root user.
-#
-# If we use a pod to group together multiple containers the systemd service file for that pod controls all containers inside it.
-# Each container still has to be created but we don't need to generate and control systemd services for them individually.
-#
-# Since the containers are managed as systemd user services we need to enable linger for the user so the services starts on boot
-# and stays alive even if the user is not logged in.
 
 - name: Install packages
   ansible.builtin.package:
@@ -14,6 +7,7 @@
       - systemd-container
     state: present
 
+# For security reasons it is recommended to run the containers as a non-root user.
 - name: Add group
   ansible.builtin.group:
     name: "{{ podman_user }}"
@@ -41,19 +35,32 @@
     group: "{{ podman_user }}"
     mode: "0700"
 
+# Since the containers are managed as systemd user services we need to enable linger for the user so the services starts on boot
+# and stays alive even if the user is not logged in.
 - name: Enable linger
   ansible.builtin.command:
     cmd: "/usr/bin/loginctl enable-linger {{ podman_user }}"
     creates: "/var/lib/systemd/linger/{{ podman_user }}"
 
-- name: Create volume directories
-  become: true
-  become_user: "{{ podman_user }}"
+# Podman has an user service called 'podman-user-wait-network-online.service' that is added as a dependency for each
+# Quadlet service. The service is supposed to run after the network is fully configured but that does not work
+# on my system. So from a suggestion in a GitHub issue, override ExecStart= with a command that waits until a ping
+# is successful. This seems to be enough for containers to start without any networking issues.
+- name: Create directory for user service override file
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ podman_user_home }}/.config/systemd/user/podman-user-wait-network-online.service.d"
     state: directory
+    owner: "{{ podman_user }}"
+    group: "{{ podman_user }}"
     mode: "0755"
-  loop: "{{ podman_volume_dirs }}"
+
+- name: Copy file to override user wait network online service
+  ansible.builtin.copy:
+    src: override.conf
+    dest: "{{ podman_user_home }}/.config/systemd/user/podman-user-wait-network-online.service.d/override.conf"
+    owner: "{{ podman_user }}"
+    group: "{{ podman_user }}"
+    mode: "0644"
 
 - name: Create podman secrets
   become: true
@@ -67,60 +74,146 @@
   no_log: true
   changed_when: false
 
-- name: Include setup pods tasks
-  ansible.builtin.include_tasks:
-    file: setup_pod.yml
+- name: Create Quadlet files for volumes
+  become: true
+  become_user: "{{ podman_user }}"
+  containers.podman.podman_volume:
+    name: "systemd-{{ item.name }}"
+    state: quadlet
+    quadlet_filename: "{{ item.name }}"
+    quadlet_file_mode: "0640"
+  loop: "{{ podman_volumes }}"
+  notify:
+    - Reread systemd configuration
+
+- name: Create Quadlet files for enabled pods
+  become: true
+  become_user: "{{ podman_user }}"
+  containers.podman.podman_pod:
+    name: "systemd-{{ item.name }}"
+    state: quadlet
+    ports: "{{ item.ports if item.ports is defined else omit }}"
+    quadlet_filename: "{{ item.name }}"
+    quadlet_file_mode: "0640"
+    quadlet_options: "{{ item.quadlet_options if item.quadlet_options is defined else omit }}"
   when: item.enabled
   loop: "{{ podman_pods }}"
   loop_control:
     label: "{{ item.name }}"
+  notify:
+    - Reread systemd configuration
 
-- name: Include setup container tasks
-  ansible.builtin.include_tasks:
-    file: setup_container.yml
+- name: Create Quadlet files for enabled containers
+  become: true
+  become_user: "{{ podman_user }}"
+  containers.podman.podman_container:
+    name: "systemd-{{ item.name }}"
+    image: "{{ item.image }}"
+    ports: "{{ item.ports if item.ports is defined else omit }}"
+    volumes: "{{ item.volumes if item.volumes is defined else omit }}"
+    command: "{{ item.command if item.command is defined else omit }}"
+    env: "{{ item.env if item.env is defined else omit }}"
+    secrets: "{{ item.secrets if item.secrets is defined else omit }}"
+    group_add: "{{ item.group_add if item.group_add is defined else omit }}"
+    pod: "{{ item.pod if item.pod is defined else omit }}"
+    state: quadlet
+    quadlet_filename: "{{ item.name }}"
+    quadlet_file_mode: "0640"
+    quadlet_options: "{{ item.quadlet_options if item.quadlet_options is defined else omit }}"
   when: item.enabled
   loop: "{{ podman_containers }}"
   loop_control:
     label: "{{ item.name }}"
+  notify:
+    - Reread systemd configuration
 
-# All containers in a pod are controlled by the "main" pod service.
-- name: Include systemd pod service tasks
-  ansible.builtin.include_tasks:
-    file: systemd.yml
+# Force systemd configuration reread if needed before handling services
+- name: Flush handlers
+  meta: flush_handlers
+
+# Start enabled pods. It will start all containers in the pod.
+- name: Start pods
+  become: true
+  become_user: "{{ podman_user }}"
+  ansible.builtin.systemd_service:
+    name: "{{ item.name }}-pod"
+    state: started
+    scope: user
   when: item.enabled
   loop: "{{ podman_pods }}"
   loop_control:
     label: "{{ item.name }}"
-  vars:
-    resource_type: pod
 
-# Setup systemd service if the container does not belong to a pod
-- name: Include systemd container service tasks
-  ansible.builtin.include_tasks:
-    file: systemd.yml
+# Start enabled containers that do not belong to any pod
+- name: Start containers
+  become: true
+  become_user: "{{ podman_user }}"
+  ansible.builtin.systemd_service:
+    name: "{{ item.name }}"
+    state: started
+    scope: user
   when: item.enabled and item.pod is undefined
   loop: "{{ podman_containers }}"
   loop_control:
     label: "{{ item.name }}"
-  vars:
-    resource_type: container
 
-- name: Include cleanup pod tasks
-  ansible.builtin.include_tasks:
-    file: cleanup.yml
+# TODO: Force service restart if quadlet file has changed
+# Without this an already existing quadlet will not restart if we modify the quadlet file
+
+- name: Stop pod services
+  become: true
+  become_user: "{{ podman_user }}"
+  ansible.builtin.systemd_service:
+    name: "{{ item.name }}-pod"
+    state: stopped
+    scope: user
+  register: stop_service
+  failed_when:
+    - stop_service.failed == true
+    - "'Could not find the requested service' not in stop_service.msg"
   when: not item.enabled
   loop: "{{ podman_pods }}"
   loop_control:
     label: "{{ item.name }}"
-  vars:
-    resource_type: pod
 
-- name: Include cleanup container tasks
-  ansible.builtin.include_tasks:
-    file: cleanup.yml
+- name: Remove pod quadlet file
+  become: true
+  become_user: "{{ podman_user }}"
+  ansible.builtin.file:
+    path: "{{ podman_user_home }}/.config/containers/systemd/{{ item.name }}.pod"
+    state: absent
+  when: not item.enabled
+  loop: "{{ podman_pods }}"
+  loop_control:
+    label: "{{ item.name }}"
+  notify:
+    - Reread systemd configuration
+
+- name: Stop container services
+  become: true
+  become_user: "{{ podman_user }}"
+  ansible.builtin.systemd_service:
+    name: "{{ item.name }}"
+    state: stopped
+    scope: user
+  register: stop_service
+  failed_when:
+    - stop_service.failed == true
+    - "'Could not find the requested service' not in stop_service.msg"
   when: not item.enabled
   loop: "{{ podman_containers }}"
   loop_control:
     label: "{{ item.name }}"
-  vars:
-    resource_type: container
+
+- name: Remove container quadlet file
+  become: true
+  become_user: "{{ podman_user }}"
+  ansible.builtin.file:
+    path: "{{ podman_user_home }}/.config/containers/systemd/{{ item.name }}.container"
+    state: absent
+  when: not item.enabled
+  loop: "{{ podman_containers }}"
+  loop_control:
+    label: "{{ item.name }}"
+  notify:
+    - Reread systemd configuration

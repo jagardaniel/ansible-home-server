@@ -28,3 +28,26 @@ kea_dhcp4_server_subnets:
         data: 192.168.0.1
 
 prometheus_node_exporter_listen_address: :9100
+
+podman_volumes:
+  - name: test-data
+
+podman_pods:
+  - name: redispod
+    enabled: false
+    ports:
+      - 6379:6379
+    quadlet_options:
+      - |
+        [Install]
+        WantedBy=default.target
+
+podman_containers:
+  - name: redis1234
+    enabled: false
+    image: docker.io/library/redis:latest
+    pod: redispod.pod
+
+  - name: redis
+    enabled: false
+    image: docker.io/library/redis:latest

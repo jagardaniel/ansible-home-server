@@ -3,19 +3,22 @@
 podman_user: podman
 podman_user_home: /home/podman
 
-# List of directories that need to be created. Has to exist before a container is started with a bind mount.
-podman_volume_dirs: []
+podman_volumes: []
+# Example:
+# podman_volumes:
+#   - name: test-data
 
 podman_pods: []
-# Example:
+# Example pod that starts on boot:
 # podman_pods:
-#   - name: teamspeak
+#   - name: redispod
 #     enabled: true
-#     userns: "keep-id:uid=9987,gid=9987"
 #     ports:
-#       - "9987:9987/udp"
-#       - "127.0.0.1:9189:9189"
-#       - "30033:30033"
+#       - 6379:6379
+#     quadlet_options:
+#       - |
+#         [Install]
+#         WantedBy=default.target
 
 podman_secrets: []
 # Example:
@@ -30,15 +33,9 @@ podman_containers: []
 #   enabled: true
 #   image: docker.io/library/redis:latest
 #
-# Example with a volume and port. uid/gid needs to be set for rootless containers if you want the files on the volume to have
-# your normal user/group permissions. It should match the uid/gid of the user inside the container.
+# Example with a container that belongs to a pod:
 # podman_containers:
-# - name: grafana
-#   enabled: false
-#   image: docker.io/grafana/grafana-oss:latest
-#   ports:
-#     - "3000:3000"
-#   volumes:
-#     - "/home/podmanager/volumes/grafana:/var/lib/grafana"
-#   user: "472:472"
-#   userns: "keep-id:uid=472,gid=472"
+#   - name: redisinapod
+#     enabled: true
+#     image: docker.io/library/redis:latest
+#     pod: redispod.pod
