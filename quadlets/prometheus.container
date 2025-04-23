@@ -2,7 +2,7 @@
 Description=Prometheus Server
 
 [Container]
-Image=docker.io/prom/prometheus:v3.2.1
+Image=docker.io/prom/prometheus:v3.3.0
 Exec=--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=1y
 PublishPort=192.168.0.1:9090:9090
 Volume=%h/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
