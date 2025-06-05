@@ -2,7 +2,7 @@
 Description=Grafana OSS
 
 [Container]
-Image=docker.io/grafana/grafana-oss:11.6.0-security-01
+Image=docker.io/grafana/grafana-oss:12.0.1
 PublishPort=192.168.0.1:3000:3000
 Volume=grafana-data.volume:/var/lib/grafana
 
