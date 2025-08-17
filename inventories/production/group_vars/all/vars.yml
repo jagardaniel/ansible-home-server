@@ -1,4 +1,7 @@
 ---
+# Global
+domain: "{{ vault_domain }}"
+
 # Unbound configuration - forward all DNS queries to Cloudflare
 unbound_interfaces:
   - 127.0.0.1
@@ -32,3 +35,22 @@ kea_dhcp4_server_subnets:
 
 # Prometheus node exporter configuration
 prometheus_node_exporter_listen_address: localhost:9100
+
+# Caddy server
+caddy_config: |
+  # Main page
+  {{ domain }} {
+      redir https://www.{host}{uri}
+  }
+
+  www.{{ domain }} {
+      respond "Hello!"
+  }
+
+  # Proxy traffic to grafana, only allow traffic from local network
+  grafana.{{ domain }} {
+      @denied not remote_ip 192.168.0.0/24
+      abort @denied
+
+      reverse_proxy 192.168.0.1:3000
+  }

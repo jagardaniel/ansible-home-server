@@ -1,0 +1,9 @@
+---
+
+caddy_config: ""
+
+# Example:
+# caddy_config: |
+#   localhost {
+#       respond "Welcome to this page!"
+#   }

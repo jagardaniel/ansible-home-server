@@ -1,0 +1,36 @@
+---
+
+- name: Install packages
+  ansible.builtin.package:
+    name: caddy
+    state: present
+
+# For some reason the "caddy validate" command fails when using validate command in the template module task. Do the validation manually instead.
+- name: Validate configuration
+  block:
+    - name: Copy temporary configuration
+      ansible.builtin.template:
+        src: Caddyfile.j2
+        dest: /etc/caddy/Caddyfile.temp
+        mode: "0644"
+      changed_when: false
+
+    - name: Validate temporary configuration
+      ansible.builtin.command:
+        cmd: /usr/bin/caddy validate --config /etc/caddy/Caddyfile.temp
+      changed_when: false
+
+    - name: Copy validated configuration
+      ansible.builtin.copy:
+        src: /etc/caddy/Caddyfile.temp
+        dest: /etc/caddy/Caddyfile
+        mode: "0644"
+        remote_src: true
+      notify:
+        - Reload caddy
+  always:
+    - name: Remove temporary configuration
+      ansible.builtin.file:
+        path: /etc/caddy/Caddyfile.temp
+        state: absent
+      changed_when: false
