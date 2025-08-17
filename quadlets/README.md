@@ -1,4 +1,4 @@
-Static quadlet files for podman until the podman role is updated to create quadlet files instead of generating systemd unit files (deprecated). The Podman version in Debian 12/bookworm does not support quadlet, only available from 13/trixie, currently in testing.
+Static quadlet files for podman until the podman role is updated to create quadlet files instead of generating systemd unit files (deprecated). The Podman version in Debian 12/bookworm does not support quadlet, only available from 13/trixie.
 
 Place the quadlet files in ` ~/.config/containers/systemd/`, run `systemctl --user daemon-reload` and start the pod/container with `systemctl --user start name.service`.
 

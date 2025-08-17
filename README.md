@@ -1,6 +1,6 @@
 ## ansible-home-server
 
-A repository with some Ansible playbooks for my home server, mostly for documentation purposes. The server runs Debian 13/trixie (testing) and is mainly used as a basic router (nftables/Kea DHCP/unbound). The roles are not intended to cover all available configuration options so they are very specific to my needs. The vault file for production is not included in the repository.
+A repository with some Ansible playbooks for my home server, mostly for documentation purposes. The server runs Debian 13/trixie (stable) and is mainly used as a basic router (nftables/Kea DHCP/unbound). The roles are not intended to cover all available configuration options so they are very specific to my needs. The vault file for production is not included in the repository.
 
 I use a simple VM as "development" environment (`inventories/development`) to try out the roles before I apply them to my physical server (`inventories/production`).
 
