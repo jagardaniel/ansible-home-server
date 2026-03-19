@@ -1,0 +1,15 @@
+[Unit]
+Description=Blackbox exporter
+
+[Container]
+Image=quay.io/prometheus/blackbox-exporter:v0.28.0
+Exec=--config.file=/config/blackbox.yml
+PublishPort=192.168.0.1:9115:9115
+Volume=%h/configs/blackbox_exporter/blackbox.yml:/config/blackbox.yml
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
