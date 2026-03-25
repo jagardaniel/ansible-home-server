@@ -18,6 +18,14 @@ unbound_forward_zones:
       - 1.1.1.1
       - 1.0.0.1
 
+unbound_local_zones:
+  - name: int.{{ domain }}.
+    type: static
+    records:
+      - name: "grafana"
+        type: "A"
+        value: "192.168.0.1"
+
 # Kea DHCPv4 server settings
 kea_dhcp4_server_interfaces:
   - eno2

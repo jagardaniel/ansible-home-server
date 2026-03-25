@@ -13,9 +13,16 @@ server:
     qname-minimisation: yes
     verbosity: {{ unbound_verbosity }}
 
-{% if unbound_extended_statistics is defined and unbound_extended_statistics %}
+{% if unbound_extended_statistics %}
     extended-statistics: yes
 {% endif %}
+
+{% for zone in unbound_local_zones %}
+    local-zone: "{{ zone.name }}" {{ zone.type }} 
+{% for record in zone.records %}
+    local-data: "{{ record.name }}.{{ zone.name}} IN {{ record.type }} {{ record.value }}"
+{% endfor %}
+{% endfor %}
 
 {% if unbound_remote_control %}
 remote-control:
@@ -23,7 +30,6 @@ remote-control:
     control-interface: /run/unbound.ctl
 {% endif %}
 
-{% if unbound_forward_zones is defined %}
 {% for zone in unbound_forward_zones %}
 forward-zone:
     name: "{{ zone.name }}"
@@ -31,4 +37,3 @@ forward-zone:
     forward-addr: {{ address }}
 {% endfor %}
 {% endfor %}
-{% endif %}
