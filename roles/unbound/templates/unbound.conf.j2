@@ -20,7 +20,7 @@ server:
 {% for zone in unbound_local_zones %}
     local-zone: "{{ zone.name }}" {{ zone.type }} 
 {% for record in zone.records %}
-    local-data: "{{ record.name }}.{{ zone.name}} IN {{ record.type }} {{ record.value }}"
+    local-data: "{{ record.name }}.{{ zone.name }} IN {{ record.type }} {{ record.value }}"
 {% endfor %}
 {% endfor %}
 
