@@ -1,0 +1,17 @@
+[Unit]
+Description=Perses Server
+
+[Container]
+Image=docker.io/persesdev/perses:main-latest
+Exec=-config /etc/perses/config.yaml
+PublishPort=192.168.0.1:8888:8080
+Volume=%h/configs/perses/config.yaml:/etc/perses/config.yaml
+Volume=%h/configs/perses/provisioning:/etc/perses/provisioning
+Volume=perses-data.volume:/perses
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,17 @@
+security:
+  encryption_key: a05cdad8855d573f9a8368de19e0db63 # not real!
+
+database:
+  file:
+    folder: "/perses"
+
+provisioning:
+  interval: "7d"
+  folders:
+    - "/etc/perses/provisioning"
+
+frontend:
+  explorer:
+    enable: true
+  information: |-
+    ## Välkommen hem!
