@@ -25,6 +25,9 @@ unbound_local_zones:
       - name: "grafana"
         type: "A"
         value: "192.168.0.1"
+      - name: "perses"
+        type: "A"
+        value: "192.168.0.1"
 
 # Kea DHCPv4 server settings
 kea_dhcp4_server_interfaces:
@@ -46,9 +49,11 @@ prometheus_node_exporter_listen_address: localhost:9100
 
 # Caddy server
 caddy_config: |
-  (internal_site) {
+  (internal_tls) {
       tls /etc/ssl/acmesh/int.{{ domain }}/fullchain.pem /etc/ssl/acmesh/int.{{ domain }}/key.pem
+  }
 
+  (internal_acl) {
       @denied not remote_ip 192.168.0.0/24
       abort @denied
   }
@@ -62,7 +67,13 @@ caddy_config: |
   }
 
   grafana.int.{{ domain }} {
-      import internal_site
+      import internal_acl
+      import internal_tls
 
       reverse_proxy 192.168.0.1:3000
+  }
+
+  http://perses.int.{{ domain }} {
+      import internal_acl
+      reverse_proxy 192.168.0.1:8888
   }
