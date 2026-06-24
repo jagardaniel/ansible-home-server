@@ -13,5 +13,3 @@ provisioning:
 frontend:
   explorer:
     enable: true
-  information: |-
-    ## Välkommen hem!

@@ -73,7 +73,9 @@ caddy_config: |
       reverse_proxy 192.168.0.1:3000
   }
 
-  http://perses.int.{{ domain }} {
+  perses.int.{{ domain }} {
       import internal_acl
+      import internal_tls
+
       reverse_proxy 192.168.0.1:8888
   }
