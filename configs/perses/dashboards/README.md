@@ -4,6 +4,9 @@ https://perses.dev/perses/docs/dac/getting-started/#getting-started-with-the-cue
 ### Example
 
 ```bash
+# Resolve dependencies if needed
+$ cue mod tidy
+
 # Build
 $ percli dac build -f teamspeak3.cue -o json
 Successfully built teamspeak3.cue at built/teamspeak3_output.json

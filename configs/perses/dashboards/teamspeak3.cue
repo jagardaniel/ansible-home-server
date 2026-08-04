@@ -1,29 +1,28 @@
+// An attempt at a Perses dashboard for a TeamSpeak 3 Server.
+//
+// Prometheus exporter used: https://github.com/wittdennis/ts3exporter (forked from hikhvar/ts3exporter)
+// Layout idea from: https://grafana.com/grafana/dashboards/3020-teamspeak-3/
+
+// The total percentage packet loss value can report lower than a more specific packetloss type (speech or control for example) which doesn't feel right. Not sure why.
+// It also looks like ts3_serverinfo_bytes_received_total/ts3_serverinfo_bytes_send_total doesn't include the file transfer bytes. Maybe it is better to create
+// our own total by adding all the specific types together.
+
 package mydac
 
 import (
 	dashboardBuilder "github.com/perses/perses/cue/dac-utils/dashboard"
-	panelGroupsBuilder "github.com/perses/perses/cue/dac-utils/panelgroups"
-	varGroupBuilder "github.com/perses/perses/cue/dac-utils/variable/group"
 	labelValuesVarBuilder "github.com/perses/plugins/prometheus/sdk/cue/variable/labelvalues"
 	panelBuilder "github.com/perses/plugins/prometheus/sdk/cue/panel"
+	panelGroupsBuilder "github.com/perses/perses/cue/dac-utils/panelgroups"
 	promQuery "github.com/perses/plugins/prometheus/schemas/prometheus-time-series-query:model"
 	statChart "github.com/perses/plugins/statchart/schemas:model"
 	timeseriesChart "github.com/perses/plugins/timeserieschart/schemas:model"
 )
 
-// A first attempt at a Perses dashboard for a TeamSpeak 3 server.
-// Prometheus exporter used: https://github.com/wittdennis/ts3exporter (forked from hikhvar/ts3exporter)
-// Layout idea from https://grafana.com/grafana/dashboards/3020-teamspeak-3/
-
-// I haven't been able to figure out how to set the width of specific panels. So right now the statchart panels are in their own panel group to keep them small.
-// TimeSeriesCharts does not have the option for a negative Y (https://github.com/perses/perses/issues/3315) so a "workaround" is to place a "-" in front of the query
-// to make it negative. It will show up as a negative value in the graph and the tables though.
-
-// The total percentage packet loss value can also report lower than a more specific packetloss type (speech or control for example) which doesn't feel right. Not sure why.
-// It also looks like ts3_serverinfo_bytes_received_total/ts3_serverinfo_bytes_send_total doesn't include the file transfer bytes. Maybe it is better to create
-// our own total by adding all the specific types together.
-
-// Default styling for all statcharts
+// The idea is to have some default settings and formatting that should apply to all panels. But I get some
+// errors if I try to overwrite these values inside a panelBuilders spec, especially for colorMode on statcharts.
+// So just use a separate planStatChart for now since I don't know how to solve it. ChatGPT couldn't help me!
+// It could also be a good idea to move out this to another file or package so it can be shared between multiple dashboards.
 #baseStatChart: statChart & {
 	spec: {
 		calculation:   "last-number"
@@ -37,7 +36,6 @@ import (
 	}
 }
 
-// Default styling for all timeseriescharts
 #baseTimeSeriesChart: timeseriesChart & {
 	spec: {
 		legend: {
@@ -47,6 +45,7 @@ import (
 				"min",
 				"max",
 				"last",
+				"mean",
 			]
 			"size": "small"
 		}
@@ -76,7 +75,11 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query: "ts3_serverinfo_clients_online{virtualserver=\"$virtualserver\"} - ts3_serverinfo_query_clients_online{virtualserver=\"$virtualserver\"}"
+						query: """
+							ts3_serverinfo_clients_online{virtualserver="$virtualserver"}
+							-
+							ts3_serverinfo_query_clients_online{virtualserver="$virtualserver"}
+							"""
 					}
 				}
 			},
@@ -104,7 +107,7 @@ import (
 
 #channelsOnlineStatPanel: panelBuilder & {
 	spec: {
-		display: name: "Channels online"
+		display: name: "Channels"
 		plugin: #plainStatChart
 
 		queries: [
@@ -145,7 +148,7 @@ import (
 	}
 }
 
-// This will probably always display online because the dashboard variable only lists online virtual servers.
+// This panel is probably a bit redundant since the dashboard variable only shows online servers.
 #statusStatPanel: panelBuilder & {
 	spec: {
 		display: name: "Status"
@@ -203,12 +206,17 @@ import (
 				}
 			}
 		}
+
 		queries: [
 			{
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "ts3_serverinfo_clients_online{virtualserver=\"$virtualserver\"} - ts3_serverinfo_query_clients_online{virtualserver=\"$virtualserver\"}"
+						query: """
+							ts3_serverinfo_clients_online{virtualserver="$virtualserver"}
+							-
+							ts3_serverinfo_query_clients_online{virtualserver="$virtualserver"}
+							"""
 						seriesNameFormat: "Clients"
 					}
 				}
@@ -226,6 +234,13 @@ import (
 					label: "Bytes per second"
 					format: unit: "bytes/sec"
 				}
+
+				querySettings: [
+					{
+						queryIndex: 1
+						negativeY:  true
+					}
+				]
 			}
 		}
 
@@ -235,7 +250,7 @@ import (
 				spec: plugin: promQuery & {
 					spec: {
 						query:            "rate(ts3_serverinfo_bytes_received_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
-						seriesNameFormat: "Total - Received"
+						seriesNameFormat: "Incoming traffic"
 					}
 				}
 			},
@@ -243,8 +258,8 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "-rate(ts3_serverinfo_bytes_send_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
-						seriesNameFormat: "Total - Sent"
+						query:            "rate(ts3_serverinfo_bytes_send_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						seriesNameFormat: "Outgoing traffic"
 					}
 				}
 			},
@@ -261,6 +276,25 @@ import (
 					label: "Bytes per second"
 					format: unit: "bytes/sec"
 				}
+
+				querySettings: [
+					{
+						queryIndex: 0
+						negativeY:  true
+					},
+					{
+						queryIndex: 2
+						negativeY:  true
+					},
+					{
+						queryIndex: 4
+						negativeY:  true
+					},
+					{
+						queryIndex: 6
+						negativeY:  true
+					},
+				]
 			}
 		}
 
@@ -269,7 +303,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "-rate(ts3_serverinfo_control_bytes_sent_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            "rate(ts3_serverinfo_control_bytes_sent_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
 						seriesNameFormat: "Control - Sent"
 					}
 				}
@@ -288,7 +322,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "-rate(ts3_serverinfo_file_transfer_bytes_sent_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            "rate(ts3_serverinfo_file_transfer_bytes_sent_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
 						seriesNameFormat: "File transfer - Sent"
 					}
 				}
@@ -307,7 +341,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "-rate(ts3_serverinfo_keepalive_bytes_sent_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            "rate(ts3_serverinfo_keepalive_bytes_sent_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
 						seriesNameFormat: "Keepalive - Sent"
 					}
 				}
@@ -326,7 +360,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "-rate(ts3_serverinfo_speech_bytes_sent_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            "rate(ts3_serverinfo_speech_bytes_sent_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
 						seriesNameFormat: "Speech - Sent"
 					}
 				}
@@ -397,14 +431,10 @@ import (
 	}
 }
 
-#varsBuilder: varGroupBuilder & {
-	#input: [
-		labelValuesVarBuilder & {
-			#name:   "virtualserver"
-			#metric: "ts3_serverinfo_online"
-			#label:  "virtualserver"
-		},
-	]
+#virtualServerVar: labelValuesVarBuilder & {
+	#name:   "virtualserver"
+	#metric: "ts3_serverinfo_online"
+	#label:  "virtualserver"
 }
 
 dashboardBuilder & {
@@ -413,7 +443,7 @@ dashboardBuilder & {
 	#display: name: "TeamSpeak 3"
 	#duration:        "12h"
 	#refreshInterval: "1m"
-	#variables:       #varsBuilder.variables
+	#variables:       [#virtualServerVar.variable]
 
 	#panelGroups: panelGroupsBuilder & {
 		#input: [
