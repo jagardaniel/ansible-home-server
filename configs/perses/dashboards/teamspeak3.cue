@@ -431,6 +431,38 @@ import (
 	}
 }
 
+#averageClientPingTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Average client ping"
+			description: "The average ping of all clients connected to the virtual server."
+		}
+		plugin: #baseTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					label: "Ping (ms)"
+					format: {
+						unit:          "decimal"
+						decimalPlaces: 1
+					}
+				}
+			}
+		}
+
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            "ts3_serverinfo_total_ping{virtualserver=\"$virtualserver\"}"
+						seriesNameFormat: "Average ping"
+					}
+				}
+			},
+		]
+	}
+}
+
 #virtualServerVar: labelValuesVarBuilder & {
 	#name:   "virtualserver"
 	#metric: "ts3_serverinfo_online"
@@ -468,6 +500,7 @@ dashboardBuilder & {
 					#overallTrafficUsageTimePanel,
 					#trafficUsageByTypeTimePanel,
 					#packetlossByTypeTimePanel,
+					#averageClientPingTimePanel,
 				]
 			},
 		]
