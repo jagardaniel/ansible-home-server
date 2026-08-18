@@ -1,0 +1,13 @@
+[Unit]
+Description=TeamSpeak Prometheus exporter
+After=ts3server.service
+
+[Container]
+Image=docker.io/jagardaniel/teamspeak_exporter:1.0.1
+Environment=TS_EXPORTER_URL=http://127.0.0.1:10080
+Secret=ts_exporter_api_key,type=env,target=TS_EXPORTER_API_KEY
+Pod=teamspeak3.pod
+
+[Service]
+Restart=always
+RestartSec=5
