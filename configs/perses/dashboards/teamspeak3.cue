@@ -1,11 +1,7 @@
 // An attempt at a Perses dashboard for a TeamSpeak 3 Server.
 //
-// Prometheus exporter used: https://github.com/wittdennis/ts3exporter (forked from hikhvar/ts3exporter)
+// Prometheus exporter used: https://github.com/jagardaniel/teamspeak_exporter
 // Layout idea from: https://grafana.com/grafana/dashboards/3020-teamspeak-3/
-
-// The total percentage packet loss value can report lower than a more specific packetloss type (speech or control for example) which doesn't feel right. Not sure why.
-// It also looks like ts3_serverinfo_bytes_received_total/ts3_serverinfo_bytes_send_total doesn't include the file transfer bytes. Maybe it is better to create
-// our own total by adding all the specific types together.
 
 package mydac
 
@@ -21,7 +17,7 @@ import (
 
 // The idea is to have some default settings and formatting that should apply to all panels. But I get some
 // errors if I try to overwrite these values inside a panelBuilders spec, especially for colorMode on statcharts.
-// So just use a separate planStatChart for now since I don't know how to solve it. ChatGPT couldn't help me!
+// So just use a separate planStatChart for now since I don't know how to solve it.
 // It could also be a good idea to move out this to another file or package so it can be shared between multiple dashboards.
 #baseStatChart: statChart & {
 	spec: {
@@ -65,6 +61,7 @@ import (
 	}
 }
 
+// Clients online also includes query clients so we have to subtract query_clients to get the count of regular voice clients.
 #clientsOnlineStatPanel: panelBuilder & {
 	spec: {
 		display: name: "Clients online"
@@ -76,9 +73,9 @@ import (
 				spec: plugin: promQuery & {
 					spec: {
 						query: """
-							ts3_serverinfo_clients_online{virtualserver="$virtualserver"}
+							teamspeak_virtualserver_clients_online{virtualserver="$virtualserver"}
 							-
-							ts3_serverinfo_query_clients_online{virtualserver="$virtualserver"}
+							teamspeak_virtualserver_query_clients_online{virtualserver="$virtualserver"}
 							"""
 					}
 				}
@@ -97,7 +94,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query: "ts3_serverinfo_max_clients{virtualserver=\"$virtualserver\"}"
+						query: "teamspeak_virtualserver_max_clients{virtualserver=\"$virtualserver\"}"
 					}
 				}
 			},
@@ -115,7 +112,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query: "ts3_serverinfo_channels_online{virtualserver=\"$virtualserver\"}"
+						query: "teamspeak_virtualserver_channels_online{virtualserver=\"$virtualserver\"}"
 					}
 				}
 			},
@@ -140,7 +137,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query: "ts3_serverinfo_uptime{virtualserver=\"$virtualserver\"}"
+						query: "teamspeak_virtualserver_uptime_seconds{virtualserver=\"$virtualserver\"}"
 					}
 				}
 			},
@@ -148,7 +145,28 @@ import (
 	}
 }
 
-// This panel is probably a bit redundant since the dashboard variable only shows online servers.
+#versionStatPanel: panelBuilder & {
+	spec: {
+		display: name: "Version"
+		plugin: #plainStatChart & {
+			spec: {
+				metricLabel: "version"
+			}
+		}
+
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query: "teamspeak_version_info"
+					}
+				}
+			},
+		]
+	}
+}
+
 #statusStatPanel: panelBuilder & {
 	spec: {
 		display: name: "Status"
@@ -175,6 +193,36 @@ import (
 							}
 						}
 					},
+					{
+						kind: "Value"
+						spec: {
+							value: "2"
+							result: {
+								color: "#FFCC00"
+								value: "Virtual online"
+							}
+						}
+					},
+					{
+						kind: "Value"
+						spec: {
+							value: "3"
+							result: {
+								color: "#FF9F1C"
+								value: "Booting up"
+							}
+						}
+					},
+					{
+						kind: "Value"
+						spec: {
+							value: "4"
+							result: {
+								color: "#FF9F1C"
+								value: "Shutting down"
+							}
+						}
+					},
 				]
 			}
 		}
@@ -184,7 +232,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query: "ts3_serverinfo_online{virtualserver=\"$virtualserver\"}"
+						query: "teamspeak_virtualserver_status{virtualserver=\"$virtualserver\"}"
 					}
 				}
 			},
@@ -200,8 +248,7 @@ import (
 				yAxis: {
 					label: "Clients"
 					format: {
-						unit:          "decimal"
-						decimalPlaces: 0
+						unit: "decimal"
 					}
 				}
 			}
@@ -213,9 +260,9 @@ import (
 				spec: plugin: promQuery & {
 					spec: {
 						query: """
-							ts3_serverinfo_clients_online{virtualserver="$virtualserver"}
+							teamspeak_virtualserver_clients_online{virtualserver="$virtualserver"}
 							-
-							ts3_serverinfo_query_clients_online{virtualserver="$virtualserver"}
+							teamspeak_virtualserver_query_clients_online{virtualserver="$virtualserver"}
 							"""
 						seriesNameFormat: "Clients"
 					}
@@ -225,6 +272,7 @@ import (
 	}
 }
 
+// Bytes for file transfer is not included in the total sent/received bytes. Add them to the total.
 #overallTrafficUsageTimePanel: panelBuilder & {
 	spec: {
 		display: name: "Overall traffic usage"
@@ -249,8 +297,8 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(ts3_serverinfo_bytes_received_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
-						seriesNameFormat: "Incoming traffic"
+						query:            "rate(teamspeak_virtualserver_received_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval]) + rate(teamspeak_virtualserver_received_file_transfer_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						seriesNameFormat: "Traffic - Received"
 					}
 				}
 			},
@@ -258,8 +306,8 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(ts3_serverinfo_bytes_send_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
-						seriesNameFormat: "Outgoing traffic"
+						query:            "rate(teamspeak_virtualserver_sent_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval]) + rate(teamspeak_virtualserver_sent_file_transfer_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						seriesNameFormat: "Traffic - Sent"
 					}
 				}
 			},
@@ -278,22 +326,10 @@ import (
 				}
 
 				querySettings: [
-					{
-						queryIndex: 0
-						negativeY:  true
-					},
-					{
-						queryIndex: 2
-						negativeY:  true
-					},
-					{
-						queryIndex: 4
-						negativeY:  true
-					},
-					{
-						queryIndex: 6
-						negativeY:  true
-					},
+					{queryIndex: 0, negativeY: true},
+					{queryIndex: 2, negativeY: true},
+					{queryIndex: 4, negativeY: true},
+					{queryIndex: 6, negativeY: true},
 				]
 			}
 		}
@@ -303,7 +339,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(ts3_serverinfo_control_bytes_sent_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            "rate(teamspeak_virtualserver_sent_control_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
 						seriesNameFormat: "Control - Sent"
 					}
 				}
@@ -312,7 +348,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(ts3_serverinfo_control_bytes_received_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            "rate(teamspeak_virtualserver_received_control_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
 						seriesNameFormat: "Control - Received"
 					}
 				}
@@ -322,7 +358,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(ts3_serverinfo_file_transfer_bytes_sent_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            "rate(teamspeak_virtualserver_sent_file_transfer_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
 						seriesNameFormat: "File transfer - Sent"
 					}
 				}
@@ -331,17 +367,16 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(ts3_serverinfo_file_transfer_bytes_received_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            "rate(teamspeak_virtualserver_received_file_transfer_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
 						seriesNameFormat: "File transfer - Received"
 					}
 				}
 			},
-
 			{
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(ts3_serverinfo_keepalive_bytes_sent_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            "rate(teamspeak_virtualserver_sent_keepalive_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
 						seriesNameFormat: "Keepalive - Sent"
 					}
 				}
@@ -350,17 +385,16 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(ts3_serverinfo_keepalive_bytes_received_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            "rate(teamspeak_virtualserver_received_keepalive_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
 						seriesNameFormat: "Keepalive - Received"
 					}
 				}
 			},
-
 			{
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(ts3_serverinfo_speech_bytes_sent_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            "rate(teamspeak_virtualserver_sent_speech_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
 						seriesNameFormat: "Speech - Sent"
 					}
 				}
@@ -369,7 +403,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(ts3_serverinfo_speech_bytes_received_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            "rate(teamspeak_virtualserver_received_speech_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
 						seriesNameFormat: "Speech - Received"
 					}
 				}
@@ -395,7 +429,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "ts3_serverinfo_total_packetloss_total{virtualserver=\"$virtualserver\"}"
+						query:            "teamspeak_virtualserver_packetloss_total_percent{virtualserver=\"$virtualserver\"}"
 						seriesNameFormat: "Packet loss - Total"
 					}
 				}
@@ -404,7 +438,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "ts3_serverinfo_total_packetloss_speech{virtualserver=\"$virtualserver\"}"
+						query:            "teamspeak_virtualserver_packetloss_speech_percent{virtualserver=\"$virtualserver\"}"
 						seriesNameFormat: "Packet loss - Speech"
 					}
 				}
@@ -413,7 +447,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "ts3_serverinfo_total_packetloss_control{virtualserver=\"$virtualserver\"}"
+						query:            "teamspeak_virtualserver_packetloss_control_percent{virtualserver=\"$virtualserver\"}"
 						seriesNameFormat: "Packet loss - Control"
 					}
 				}
@@ -422,7 +456,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "ts3_serverinfo_total_packetloss_keepalive{virtualserver=\"$virtualserver\"}"
+						query:            "teamspeak_virtualserver_packetloss_keepalive_percent{virtualserver=\"$virtualserver\"}"
 						seriesNameFormat: "Packet loss - Keepalive"
 					}
 				}
@@ -431,7 +465,7 @@ import (
 	}
 }
 
-#averageClientPingTimePanel: panelBuilder & {
+#PingTimePanel: panelBuilder & {
 	spec: {
 		display: {
 			name:        "Average client ping"
@@ -440,10 +474,9 @@ import (
 		plugin: #baseTimeSeriesChart & {
 			spec: {
 				yAxis: {
-					label: "Ping (ms)"
+					label: "Ping"
 					format: {
-						unit:          "decimal"
-						decimalPlaces: 1
+						unit: "seconds"
 					}
 				}
 			}
@@ -454,8 +487,124 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "ts3_serverinfo_total_ping{virtualserver=\"$virtualserver\"}"
-						seriesNameFormat: "Average ping"
+						query:            "teamspeak_virtualserver_ping_seconds{virtualserver=\"$virtualserver\"}"
+						seriesNameFormat: "Ping - Average"
+					}
+				}
+			},
+		]
+	}
+}
+
+#packetsByTypeTimePanel: panelBuilder & {
+	spec: {
+		display: name: "Packets by type"
+		plugin: #baseTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					label: "Packets per second"
+					format: unit: "packets/sec"
+				}
+
+				querySettings: [
+					{queryIndex: 0, negativeY: true},
+					{queryIndex: 2, negativeY: true},
+					{queryIndex: 4, negativeY: true},
+				]
+			}
+		}
+
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            "rate(teamspeak_virtualserver_sent_control_packets_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						seriesNameFormat: "Control - Sent"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            "rate(teamspeak_virtualserver_received_control_packets_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						seriesNameFormat: "Control - Received"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            "rate(teamspeak_virtualserver_sent_keepalive_packets_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						seriesNameFormat: "Keepalive - Sent"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            "rate(teamspeak_virtualserver_received_keepalive_packets_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						seriesNameFormat: "Keepalive - Received"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            "rate(teamspeak_virtualserver_sent_speech_packets_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						seriesNameFormat: "Speech - Sent"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            "rate(teamspeak_virtualserver_received_speech_packets_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						seriesNameFormat: "Speech - Received"
+					}
+				}
+			},
+		]
+	}
+}
+
+// I'm not sure how to display these two values in the best way. Maybe if you could get the exact numbers of connections between two scrapes and just show
+// that as a number but I can't figure that out.
+#clientConnectionsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name: "Client connections (rate)"
+		}
+		plugin: #baseTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					label: "Connections / min"
+					format: unit: "decimal"
+				}
+			}
+		}
+
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            "rate(teamspeak_virtualserver_client_connections_total{virtualserver=\"$virtualserver\"}[$__rate_interval]) * 60"
+						seriesNameFormat: "Connections - Regular"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            "rate(teamspeak_virtualserver_query_client_connections_total{virtualserver=\"$virtualserver\"}[$__rate_interval]) * 60"
+						seriesNameFormat: "Connections - Query"
 					}
 				}
 			},
@@ -465,7 +614,7 @@ import (
 
 #virtualServerVar: labelValuesVarBuilder & {
 	#name:   "virtualserver"
-	#metric: "ts3_serverinfo_online"
+	#metric: "teamspeak_virtualserver_up"
 	#label:  "virtualserver"
 }
 
@@ -488,6 +637,7 @@ dashboardBuilder & {
 					#maxClientsStatPanel,
 					#channelsOnlineStatPanel,
 					#uptimeStatPanel,
+					#versionStatPanel,
 					#statusStatPanel,
 				]
 			},
@@ -500,7 +650,9 @@ dashboardBuilder & {
 					#overallTrafficUsageTimePanel,
 					#trafficUsageByTypeTimePanel,
 					#packetlossByTypeTimePanel,
-					#averageClientPingTimePanel,
+					#PingTimePanel,
+					#packetsByTypeTimePanel,
+					#clientConnectionsTimePanel,
 				]
 			},
 		]
