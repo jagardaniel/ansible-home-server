@@ -94,7 +94,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query: "teamspeak_virtualserver_max_clients{virtualserver=\"$virtualserver\"}"
+						query: #"teamspeak_virtualserver_max_clients{virtualserver="$virtualserver"}"#
 					}
 				}
 			},
@@ -112,7 +112,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query: "teamspeak_virtualserver_channels_online{virtualserver=\"$virtualserver\"}"
+						query: #"teamspeak_virtualserver_channels_online{virtualserver="$virtualserver"}"#
 					}
 				}
 			},
@@ -137,7 +137,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query: "teamspeak_virtualserver_uptime_seconds{virtualserver=\"$virtualserver\"}"
+						query: #"teamspeak_virtualserver_uptime_seconds{virtualserver="$virtualserver"}"#
 					}
 				}
 			},
@@ -232,7 +232,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query: "teamspeak_virtualserver_status{virtualserver=\"$virtualserver\"}"
+						query: #"teamspeak_virtualserver_status{virtualserver="$virtualserver"}"#
 					}
 				}
 			},
@@ -297,7 +297,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_received_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval]) + rate(teamspeak_virtualserver_received_file_transfer_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_received_bytes_total{virtualserver="$virtualserver"}[$__rate_interval]) + rate(teamspeak_virtualserver_received_file_transfer_bytes_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Traffic - Received"
 					}
 				}
@@ -306,7 +306,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_sent_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval]) + rate(teamspeak_virtualserver_sent_file_transfer_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_sent_bytes_total{virtualserver="$virtualserver"}[$__rate_interval]) + rate(teamspeak_virtualserver_sent_file_transfer_bytes_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Traffic - Sent"
 					}
 				}
@@ -339,7 +339,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_sent_control_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_sent_control_bytes_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Control - Sent"
 					}
 				}
@@ -348,7 +348,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_received_control_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_received_control_bytes_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Control - Received"
 					}
 				}
@@ -358,7 +358,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_sent_file_transfer_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_sent_file_transfer_bytes_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "File transfer - Sent"
 					}
 				}
@@ -367,7 +367,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_received_file_transfer_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_received_file_transfer_bytes_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "File transfer - Received"
 					}
 				}
@@ -376,7 +376,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_sent_keepalive_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_sent_keepalive_bytes_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Keepalive - Sent"
 					}
 				}
@@ -385,7 +385,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_received_keepalive_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_received_keepalive_bytes_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Keepalive - Received"
 					}
 				}
@@ -394,7 +394,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_sent_speech_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_sent_speech_bytes_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Speech - Sent"
 					}
 				}
@@ -403,7 +403,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_received_speech_bytes_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_received_speech_bytes_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Speech - Received"
 					}
 				}
@@ -429,7 +429,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "teamspeak_virtualserver_packetloss_total_percent{virtualserver=\"$virtualserver\"}"
+						query:            #"teamspeak_virtualserver_packetloss_total_percent{virtualserver="$virtualserver"}"#
 						seriesNameFormat: "Packet loss - Total"
 					}
 				}
@@ -438,7 +438,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "teamspeak_virtualserver_packetloss_speech_percent{virtualserver=\"$virtualserver\"}"
+						query:            #"teamspeak_virtualserver_packetloss_speech_percent{virtualserver="$virtualserver"}"#
 						seriesNameFormat: "Packet loss - Speech"
 					}
 				}
@@ -447,7 +447,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "teamspeak_virtualserver_packetloss_control_percent{virtualserver=\"$virtualserver\"}"
+						query:            #"teamspeak_virtualserver_packetloss_control_percent{virtualserver="$virtualserver"}"#
 						seriesNameFormat: "Packet loss - Control"
 					}
 				}
@@ -456,7 +456,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "teamspeak_virtualserver_packetloss_keepalive_percent{virtualserver=\"$virtualserver\"}"
+						query:            #"teamspeak_virtualserver_packetloss_keepalive_percent{virtualserver="$virtualserver"}"#
 						seriesNameFormat: "Packet loss - Keepalive"
 					}
 				}
@@ -487,7 +487,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "teamspeak_virtualserver_ping_seconds{virtualserver=\"$virtualserver\"}"
+						query:            #"teamspeak_virtualserver_ping_seconds{virtualserver="$virtualserver"}"#
 						seriesNameFormat: "Ping - Average"
 					}
 				}
@@ -519,7 +519,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_sent_control_packets_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_sent_control_packets_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Control - Sent"
 					}
 				}
@@ -528,7 +528,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_received_control_packets_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_received_control_packets_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Control - Received"
 					}
 				}
@@ -537,7 +537,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_sent_keepalive_packets_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_sent_keepalive_packets_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Keepalive - Sent"
 					}
 				}
@@ -546,7 +546,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_received_keepalive_packets_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_received_keepalive_packets_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Keepalive - Received"
 					}
 				}
@@ -555,7 +555,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_sent_speech_packets_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_sent_speech_packets_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Speech - Sent"
 					}
 				}
@@ -564,7 +564,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_received_speech_packets_total{virtualserver=\"$virtualserver\"}[$__rate_interval])"
+						query:            #"rate(teamspeak_virtualserver_received_speech_packets_total{virtualserver="$virtualserver"}[$__rate_interval])"#
 						seriesNameFormat: "Speech - Received"
 					}
 				}
@@ -594,7 +594,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_client_connections_total{virtualserver=\"$virtualserver\"}[$__rate_interval]) * 60"
+						query:            #"rate(teamspeak_virtualserver_client_connections_total{virtualserver="$virtualserver"}[$__rate_interval]) * 60"#
 						seriesNameFormat: "Connections - Regular"
 					}
 				}
@@ -603,7 +603,7 @@ import (
 				kind: "TimeSeriesQuery"
 				spec: plugin: promQuery & {
 					spec: {
-						query:            "rate(teamspeak_virtualserver_query_client_connections_total{virtualserver=\"$virtualserver\"}[$__rate_interval]) * 60"
+						query:            #"rate(teamspeak_virtualserver_query_client_connections_total{virtualserver="$virtualserver"}[$__rate_interval]) * 60"#
 						seriesNameFormat: "Connections - Query"
 					}
 				}
@@ -613,9 +613,9 @@ import (
 }
 
 #virtualServerVar: labelValuesVarBuilder & {
-	#name:   "virtualserver"
-	#metric: "teamspeak_virtualserver_up"
-	#label:  "virtualserver"
+	#name:  "virtualserver"
+	#query: "teamspeak_virtualserver_up"
+	#label: "virtualserver"
 }
 
 dashboardBuilder & {
