@@ -1,4 +1,5 @@
-// An attempt to copy most panels/queries from Node Exporter Full dashboard:
+// An attempt to copy most panels/queries from Node Exporter Full dashboard.
+// So layout, queries and panels are made by the person or people behind the Grafana Node Exporter Full dashboard:
 // https://grafana.com/grafana/dashboards/1860-node-exporter-full/
 // https://github.com/rfmoz/grafana-dashboards.git
 //
@@ -475,9 +476,7 @@ import (
 		plugin: #baseTimeSeriesChart & {
 			spec: {
 				yAxis: format: unit: "decbits/sec"
-				querySettings: [
-					{queryIndex: 1, negativeY: true}, // Transmit
-				]
+				querySettings: [{queryIndex: 1, negativeY: true}] // Transmit
 			}
 		}
 		queries: [
@@ -728,9 +727,7 @@ import (
 					show:  true
 					label: "out (-) / in (+)"
 				}
-				querySettings: [
-					{queryIndex: 1, negativeY: true}, // Transmit
-				]
+				querySettings: [{queryIndex: 1, negativeY: true}] // Transmit
 			}
 		}
 		queries: [
@@ -769,9 +766,7 @@ import (
 					show:  true
 					label: "out (-) / in (+)"
 				}
-				querySettings: [
-					{queryIndex: 1, negativeY: true}, // Transmit
-				]
+				querySettings: [{queryIndex: 1, negativeY: true}] // Transmit
 			}
 		}
 		queries: [
@@ -810,9 +805,7 @@ import (
 					show:  true
 					label: "read (-) / write (+)"
 				}
-				querySettings: [
-					{queryIndex: 0, negativeY: true}, // Read
-				]
+				querySettings: [{queryIndex: 0, negativeY: true}] // Read
 			}
 		}
 		queries: [
@@ -851,9 +844,7 @@ import (
 					show:  true
 					label: "read (-) / write (+)"
 				}
-				querySettings: [
-					{queryIndex: 0, negativeY: true}, // Read
-				]
+				querySettings: [{queryIndex: 0, negativeY: true}] // Read
 			}
 		}
 		queries: [
@@ -1371,9 +1362,7 @@ import (
 				yAxis: {
 					format: unit: "bytes"
 				}
-				querySettings: [
-					{queryIndex: 1, colorMode: "fixed", colorValue: "#EA4747", lineStyle: "dashed", areaOpacity: 0}, // Vmalloc Total
-				]
+				querySettings: [{queryIndex: 1, colorMode: "fixed", colorValue: "#EA4747", lineStyle: "dashed", areaOpacity: 0}] // Vmalloc Total
 			}
 		}
 		queries: [
@@ -1592,9 +1581,7 @@ import (
 					show:  true
 					label: "out (-) / in (+)"
 				}
-				querySettings: [
-					{queryIndex: 1, negativeY: true}, // Pagesout
-				]
+				querySettings: [{queryIndex: 1, negativeY: true}] // Pagesout
 			}
 		}
 		queries: [
@@ -1633,9 +1620,7 @@ import (
 					show:  true
 					label: "out (-) / in (+)"
 				}
-				querySettings: [
-					{queryIndex: 1, negativeY: true}, // Pagesout
-				]
+				querySettings: [{queryIndex: 1, negativeY: true}] // Pagesout
 			}
 		}
 		queries: [
@@ -1717,9 +1702,7 @@ import (
 				yAxis: {
 					format: unit: "ops/sec"
 				}
-				querySettings: [
-					{queryIndex: 0, colorMode: "fixed", colorValue: "#EA4747"},
-				]
+				querySettings: [{queryIndex: 0, colorMode: "fixed", colorValue: "#EA4747"}]
 			}
 		}
 		queries: [
@@ -1729,6 +1712,1388 @@ import (
 					spec: {
 						query:            #"rate(node_vmstat_oom_kill{instance="$instance",job="$job"}[$__rate_interval])"#
 						seriesNameFormat: "OOM Kills"
+					}
+				}
+			},
+		]
+	}
+}
+
+#timeSyncDriftTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Time Synchronized Drift"
+			description: "Tracks the system clock's estimated and maximum error, as well as its offset from the reference clock (e.g., via NTP). Useful for detecting synchronization drift"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "seconds"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_timex_estimated_error_seconds{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Estimated error"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_timex_offset_seconds{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Offset local vs reference"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_timex_maxerror_seconds{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Maximum error"
+					}
+				}
+			},
+		]
+	}
+}
+
+#timePLLAdjustTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Time PLL Adjust"
+			description: "NTP phase-locked loop (PLL) time constant used by the kernel to control time adjustments. Lower values mean faster correction but less stability"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_timex_loop_time_constant{instance="$instance",job="$job"}"#
+						seriesNameFormat: "PLL Time Constant"
+					}
+				}
+			},
+		]
+	}
+}
+
+#timeSyncStatusTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Time Synchronized Status"
+			description: "Shows whether the system clock is synchronized to a reliable time source, and the current frequency correction ratio applied by the kernel to maintain synchronization"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_timex_sync_status{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Sync status (1 = ok)"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_timex_frequency_adjustment_ratio{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Frequency Adjustment"
+					}
+				}
+			},
+		]
+	}
+}
+
+// It looks like timeseries charts doesn't have a unit for Hz
+#timePPSFrequencyStabilityTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "PPS Frequency / Stability"
+			description: "Displays the PPS signal's frequency offset and stability (jitter) in hertz. Useful for monitoring high-precision time sources like GPS or atomic clocks"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+					show:  true
+					label: "Hz"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_timex_pps_frequency_hertz{instance="$instance",job="$job"}"#
+						seriesNameFormat: "PPS Frequency Offset"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_timex_pps_stability_hertz{instance="$instance",job="$job"}"#
+						seriesNameFormat: "PPS Frequency Stability"
+					}
+				}
+			},
+		]
+	}
+}
+
+#timePPSAccuracyTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "PPS Time Accuracy"
+			description: "Tracks PPS signal timing jitter and shift compared to system clock"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "seconds"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_timex_pps_jitter_seconds{instance="$instance",job="$job"}"#
+						seriesNameFormat: "PPS Jitter"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_timex_pps_shift_seconds{instance="$instance",job="$job"}"#
+						seriesNameFormat: "PPS Shift"
+					}
+				}
+			},
+		]
+	}
+}
+
+#timePPSSyncEventsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "PPS Sync Events"
+			description: "Rate of PPS synchronization diagnostics including calibration events, jitter violations, errors, and frequency stability exceedances"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "ops/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_timex_pps_calibration_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "PPS Calibrations/sec"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_timex_pps_error_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "PPS Errors/sec"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_timex_pps_stability_exceeded_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "PPS Stability Exceeded/sec"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_timex_pps_jitter_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "PPS Jitter Events/sec"
+					}
+				}
+			},
+		]
+	}
+}
+
+#processesStatusTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Processes Status"
+			description: "Processes currently in runnable or blocked states. Helps identify CPU contention or I/O wait bottlenecks"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_procs_blocked{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Blocked (I/O Wait)"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_procs_running{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Runnable (Ready for CPU)"
+					}
+				}
+			},
+		]
+	}
+}
+
+// I don't have --collector.processes enabled so I'm unable to verify how this looks
+#processesDetailedStatesTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Processes Detailed States"
+			description: "Current number of processes in each state (e.g., running, sleeping, zombie). Requires --collector.processes to be enabled in node_exporter"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_processes_state{instance="$instance",job="$job"}"#
+						seriesNameFormat: "{{ state }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+#processesForksTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Processes Forks"
+			description: "Rate of new processes being created on the system (forks/sec)"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "ops/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_forks_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "Process Forks per second"
+					}
+				}
+			},
+		]
+	}
+}
+
+#processesCPUSaturationPerCoreTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "CPU Saturation per Core"
+			description: "Shows CPU saturation per core, calculated as the proportion of time spent waiting to run relative to total time demanded (running + waiting)"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "percent-decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"((rate(node_schedstat_running_seconds_total{instance="$instance",job="$job"}[$__rate_interval]) + rate(node_schedstat_waiting_seconds_total{instance="$instance",job="$job"}[$__rate_interval])) > bool 0) * (rate(node_schedstat_waiting_seconds_total{instance="$instance",job="$job"}[$__rate_interval]) / (rate(node_schedstat_running_seconds_total{instance="$instance",job="$job"}[$__rate_interval]) + rate(node_schedstat_waiting_seconds_total{instance="$instance",job="$job"}[$__rate_interval])))"#
+						seriesNameFormat: "CPU {{cpu}}"
+					}
+				}
+			},
+		]
+	}
+}
+
+// I don't have --collector.processes enabled so I'm unable to verify how this looks
+#processesPIDsNumberLimitTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "PIDs Number and Limit"
+			description: "Number of active PIDs on the system and the configured maximum allowed. Useful for detecting PID exhaustion risk. Requires --collector.processes in node_exporter"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_processes_pids{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Number of PIDs"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_processes_max_processes{instance="$instance",job="$job"}"#
+						seriesNameFormat: "PIDs limit"
+					}
+				}
+			},
+		]
+	}
+}
+
+// I don't have --collector.processes enabled so I'm unable to verify how this looks
+#processesThreadsNumberLimitTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Threads Number and Limit"
+			description: "Number of active threads on the system and the configured thread limit. Useful for monitoring thread pressure. Requires --collector.processes in node_exporter"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_processes_threads{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Allocated threads"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_processes_max_threads{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Threads limit"
+					}
+				}
+			},
+		]
+	}
+}
+
+#contextSwitchesInterruptsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Context Switches / Interrupts"
+			description: "Per-second rate of context switches and hardware interrupts. High values may indicate intense CPU or I/O activity"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "ops/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_context_switches_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "Context switches"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_intr_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "Interrupts"
+					}
+				}
+			},
+		]
+	}
+}
+
+#systemLoadTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "System Load"
+			description: "System load average over 1, 5, and 15 minutes. Reflects the number of active or waiting processes. Values above CPU core count may indicate overload"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+				querySettings: [{queryIndex: 3, areaOpacity: 0, lineStyle: "dashed", colorMode: "fixed", colorValue: "#EA4747"}]
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_load1{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Load 1m"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_load5{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Load 5m"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_load15{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Load 15m"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"count(count(node_cpu_seconds_total{instance="$instance",job="$job"}) by (cpu))"#
+						seriesNameFormat: "CPU Core Count"
+					}
+				}
+			},
+		]
+	}
+}
+
+// It looks like timeseries charts doesn't have a unit for Hz
+#CPUFrequencyScalingTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "CPU Frequency Scaling"
+			description: "Real-time CPU frequency scaling per core, including average minimum and maximum allowed scaling frequencies"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+					show:  true
+					label: "Hz"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_cpu_scaling_frequency_hertz{instance="$instance",job="$job"}"#
+						seriesNameFormat: "CPU {{ cpu }}"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"avg(node_cpu_scaling_frequency_max_hertz{instance="$node",job="$job"})"#
+						seriesNameFormat: "Max"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"avg(node_cpu_scaling_frequency_min_hertz{instance="$instance",job="$job"})"#
+						seriesNameFormat: "Min"
+					}
+				}
+			},
+		]
+	}
+}
+
+#CPUScheduleTimeslicesTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "CPU Schedule Timeslices"
+			description: "Rate of scheduling timeslices executed per CPU. Reflects how frequently the scheduler switches tasks on each core"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "ops/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_schedstat_timeslices_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "CPU {{ cpu }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+// I don't have --collector.interrupts enabled so I'm unable to verify how this looks
+#IRQDetailTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "IRQ Detail"
+			description: "Breaks down hardware interrupts by type and device. Useful for diagnosing IRQ load on network, disk, or CPU interfaces. Requires --collector.interrupts to be enabled in node_exporter"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "ops/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_interrupts_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ type }} - {{ info }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+#entropyTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Entropy"
+			description: "Number of bits of entropy currently available to the system's random number generators (e.g., /dev/random). Low values may indicate that random number generation could block or degrade performance of cryptographic operations"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decbits"
+				}
+				querySettings: [{queryIndex: 1, areaOpacity: 0, lineStyle: "dashed", colorMode: "fixed", colorValue: "#EA4747"}]
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_entropy_available_bits{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Entropy available"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_entropy_pool_size_bits{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Entropy pool max"
+					}
+				}
+			},
+		]
+	}
+}
+
+#hardwareTemperatureTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Hardware Temperature Monitor"
+			description: "Monitors hardware sensor temperatures and critical thresholds as exposed by Linux hwmon. Includes CPU, GPU, and motherboard sensors where available"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "celsius"
+				}
+				querySettings: [{queryIndex: 1, areaOpacity: 0, lineStyle: "dashed", colorMode: "fixed", colorValue: "#EA4747"}]
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_hwmon_temp_celsius{instance="$instance",job="$job"} * on(chip) group_left(chip_name) node_hwmon_chip_names{instance="$instance",job="$job"}"#
+						seriesNameFormat: "{{ chip_name }} {{ sensor }}"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_hwmon_temp_crit_celsius{instance="$instance",job="$job"} * on(chip) group_left(chip_name) node_hwmon_chip_names{instance="$instance",job="$job"}"#
+						seriesNameFormat: "{{ chip_name }} {{ sensor }} Critical"
+					}
+				}
+			},
+		]
+	}
+}
+
+#coolingDeviceUtilizationTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Cooling Device Utilization"
+			description: "Shows how hard each cooling device (fan/throttle) is working relative to its maximum capacity"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "percent"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"(node_cooling_device_max_state{instance="$instance",job="$job"} > bool 0) * (100 * node_cooling_device_cur_state{instance="$instance",job="$job"} / node_cooling_device_max_state{instance="$instance",job="$job"})"#
+						seriesNameFormat: "{{name}} - {{type}}"
+					}
+				}
+			},
+		]
+	}
+}
+
+// I have no data for this query so unable to verify how the panel looks.
+#powerSupplyTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Power Supply"
+			description: "Shows the online status of power supplies (e.g., AC, battery). A value of 1-Yes indicates the power supply is active/online"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_power_supply_online{instance="$instance",job="$job"}"#
+						seriesNameFormat: "{{ power_supply }} online"
+					}
+				}
+			},
+		]
+	}
+}
+
+// I have no data for this query so unable to verify how the panel looks.
+// Timeseries charts in Perses doesn't have a unit for RPM (Revolutions per minute).
+#hardwareFanSpeedTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Hardware Fan Speed"
+			description: "Displays the current fan speeds (RPM) from hardware sensors via the hwmon interface"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+					show:  true
+					label: "rpm"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_hwmon_fan_rpm{instance="$instance",job="$job"} * on(chip) group_left(chip_name) node_hwmon_chip_names{instance="$instance",job="$job"}"#
+						seriesNameFormat: "{{ chip_name }} {{ sensor }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+#systemdUnitsStateTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Systemd Units State"
+			description: "Current number of systemd units in each operational state, such as active, failed, inactive, or transitioning"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+				querySettings: [{queryIndex: 3, colorMode: "fixed", colorValue: "#EA4747"}]
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_systemd_units{instance="$instance",job="$job",state="activating"}"#
+						seriesNameFormat: "Activating"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_systemd_units{instance="$instance",job="$job",state="active"}"#
+						seriesNameFormat: "Active"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_systemd_units{instance="$instance",job="$job",state="deactivating"}"#
+						seriesNameFormat: "Deactivating"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_systemd_units{instance="$instance",job="$job",state="failed"}"#
+						seriesNameFormat: "Failed"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_systemd_units{instance="$instance",job="$job",state="inactive"}"#
+						seriesNameFormat: "Inactive"
+					}
+				}
+			},
+		]
+	}
+}
+
+#systemdSocketsCurrentTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Systemd Sockets Current"
+			description: "Current number of active connections per systemd socket, as reported by the Node Exporter systemd collector"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_systemd_socket_current_connections{instance="$instance",job="$job"}"#
+						seriesNameFormat: "{{ name }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+#systemdSocketsAcceptedTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Systemd Sockets Accepted"
+			description: "Rate of accepted connections per second for each systemd socket"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "events/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_systemd_socket_accepted_connections_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ name }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+#systemdSocketsRefusedTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Systemd Sockets Refused"
+			description: "Rate of systemd socket connection refusals per second, typically due to service unavailability or backlog overflow"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "events/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_systemd_socket_refused_connections_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ name }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+#diskReadWriteIOpsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Disk Read/Write IOps"
+			description: "Number of I/O operations completed per second for the device (after merges), including both reads and writes"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "ops/sec"
+					show:  true
+					label: "read (-) / write (+)"
+				}
+				querySettings: [{queryIndex: 0, negativeY: true}] // Read
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_reads_completed_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Read"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_writes_completed_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Write"
+					}
+				}
+			},
+		]
+	}
+}
+
+#diskReadWriteDataTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Disk Read/Write Data"
+			description: "Number of bytes read from or written to the device per second"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decbytes/sec"
+					show:  true
+					label: "read (-) / write (+)"
+				}
+				querySettings: [{queryIndex: 0, negativeY: true}] // Read
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_read_bytes_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Read"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_written_bytes_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Write"
+					}
+				}
+			},
+		]
+	}
+}
+
+#diskAverageWaitTimeTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Disk Average Wait Time"
+			description: "Average time for requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "seconds"
+					show:  true
+					label: "read (-) / write (+)"
+				}
+				querySettings: [{queryIndex: 0, negativeY: true}] // Read
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"(rate(node_disk_reads_completed_total{instance="$instance",job="$job"}[$__rate_interval]) > bool 0) * (rate(node_disk_read_time_seconds_total{instance="$instance",job="$job"}[$__rate_interval]) / rate(node_disk_reads_completed_total{instance="$instance",job="$job"}[$__rate_interval]))"#
+						seriesNameFormat: "{{ device }} - Read"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"(rate(node_disk_writes_completed_total{instance="$instance",job="$job"}[$__rate_interval]) > bool 0) * (rate(node_disk_write_time_seconds_total{instance="$instance",job="$job"}[$__rate_interval]) / rate(node_disk_writes_completed_total{instance="$instance",job="$job"}[$__rate_interval]))"#
+						seriesNameFormat: "{{ device }} - Write"
+					}
+				}
+			},
+		]
+	}
+}
+
+#diskAverageQueueSizeTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Average Queue Size"
+			description: "Average queue length of the requests that were issued to the device"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_io_time_weighted_seconds_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+#diskReadWriteMergedTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Disk R/W Merged"
+			description: "Number of read and write requests merged per second that were queued to the device"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "ops/sec"
+					show:  true
+					label: "read (-) / write (+)"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_reads_merged_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Read"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_writes_merged_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Write"
+					}
+				}
+			},
+		]
+	}
+}
+
+#diskTimeIOsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Time Spent Doing I/Os"
+			description: "Percentage of time the disk spent actively processing I/O operations, including general I/O, discards (TRIM), and write cache flushes"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "percent-decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_io_time_seconds_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - General IO"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_discard_time_seconds_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Discard/TRIM"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_flush_requests_time_seconds_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Flush (write cache)"
+					}
+				}
+			},
+		]
+	}
+}
+
+#diskOpsDiscardsFlushTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Disk Ops Discards / Flush"
+			description: "Per-second rate of discard (TRIM) and flush (write cache) operations. Useful for monitoring low-level disk activity on SSDs and advanced storage"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "ops/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_discards_completed_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Discards completed"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_discards_merged_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Discards merged"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_flush_requests_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Flush"
+					}
+				}
+			},
+		]
+	}
+}
+
+#diskSectorsDiscardedSuccessTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Disk Sectors Discarded Successfully"
+			description: "Shows how many disk sectors are discarded (TRIMed) per second. Useful for monitoring SSD behavior and storage efficiency"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_disk_discarded_sectors_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+#diskInstantaneousQueueSizeTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Instantaneous Queue Size"
+			description: "Number of in-progress I/O requests at the time of sampling (active requests in the disk queue)"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_disk_io_now{instance="$instance",job="$job"}"#
+						seriesNameFormat: "{{ device }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+#fileDescriptorTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "File Descriptor"
+			description: "Number of file descriptors currently allocated system-wide versus the system limit. Important for detecting descriptor exhaustion risks"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+				querySettings: [{queryIndex: 0, areaOpacity: 0, colorMode: "fixed", lineStyle: "dashed", colorValue: "#EA4747"}] // Max open files
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_filefd_maximum{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Max open files"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_filefd_allocated{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Open files"
+					}
+				}
+			},
+		]
+	}
+}
+
+#fileNodesFreeTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "File Nodes Free"
+			description: "Number of free file nodes (inodes) available per mounted filesystem. A low count may prevent file creation even if disk space is available"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_filesystem_files_free{instance="$instance",job="$job",device!~'rootfs'}"#
+						seriesNameFormat: "{{ mountpoint }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+// Perses does not have the type "Yes/No" from Grafana, so use 0/1 for now.
+#filesystemInReadOnlyErrorTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Filesystem in ReadOnly / Error"
+			description: "Indicates filesystems mounted in read-only mode or reporting device-level I/O errors"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_filesystem_readonly{instance="$instance",job="$job",device!~'rootfs'}"#
+						seriesNameFormat: "{{ mountpoint }} - ReadOnly"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_filesystem_device_error{instance="$instance",job="$job",device!~'rootfs',fstype!~'tmpfs'}"#
+						seriesNameFormat: "{{ mountpoint }} - Device error"
+					}
+				}
+			},
+		]
+	}
+}
+
+#fileNodesSizeTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "File Nodes Size"
+			description: "Number of file nodes (inodes) available per mounted filesystem. Reflects maximum file capacity regardless of disk size"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_filesystem_files{instance="$instance",job="$job",device!~'rootfs'}"#
+						seriesNameFormat: "{{ mountpoint }}"
 					}
 				}
 			},
@@ -1834,6 +3199,101 @@ dashboardBuilder & {
 					#memoryPagesSwapInOutPanel,
 					#memoryPageFaultsTimePanel,
 					#memoryOOMKillerTimePanel,
+				]
+			},
+			{
+				#title:       "System Timesync"
+				#cols:        2
+				#height:      8
+				#isCollapsed: true
+				#panels: [
+					#timeSyncDriftTimePanel,
+					#timePLLAdjustTimePanel,
+					#timeSyncStatusTimePanel,
+					#timePPSFrequencyStabilityTimePanel,
+					#timePPSAccuracyTimePanel,
+					#timePPSSyncEventsTimePanel,
+				]
+			},
+			{
+				#title:       "System Processes"
+				#cols:        2
+				#height:      8
+				#isCollapsed: true
+				#panels: [
+					#processesStatusTimePanel,
+					#processesDetailedStatesTimePanel,
+					#processesForksTimePanel,
+					#processesCPUSaturationPerCoreTimePanel,
+					#processesPIDsNumberLimitTimePanel,
+					#processesThreadsNumberLimitTimePanel,
+				]
+			},
+			{
+				#title:       "System Misc"
+				#cols:        2
+				#height:      8
+				#isCollapsed: true
+				#panels: [
+					#contextSwitchesInterruptsTimePanel,
+					#systemLoadTimePanel,
+					#CPUFrequencyScalingTimePanel,
+					#CPUScheduleTimeslicesTimePanel,
+					#IRQDetailTimePanel,
+					#entropyTimePanel,
+				]
+			},
+			{
+				#title:       "Hardware Misc"
+				#cols:        2
+				#height:      8
+				#isCollapsed: true
+				#panels: [
+					#hardwareTemperatureTimePanel,
+					#coolingDeviceUtilizationTimePanel,
+					#powerSupplyTimePanel,
+					#hardwareFanSpeedTimePanel,
+				]
+			},
+			{
+				#title:       "Systemd"
+				#cols:        2
+				#height:      8
+				#isCollapsed: true
+				#panels: [
+					#systemdUnitsStateTimePanel,
+					#systemdSocketsCurrentTimePanel,
+					#systemdSocketsAcceptedTimePanel,
+					#systemdSocketsRefusedTimePanel,
+				]
+			},
+			{
+				#title:       "Storage disk"
+				#cols:        2
+				#height:      8
+				#isCollapsed: true
+				#panels: [
+					#diskReadWriteIOpsTimePanel,
+					#diskReadWriteDataTimePanel,
+					#diskAverageWaitTimeTimePanel,
+					#diskAverageQueueSizeTimePanel,
+					#diskReadWriteMergedTimePanel,
+					#diskTimeIOsTimePanel,
+					#diskOpsDiscardsFlushTimePanel,
+					#diskSectorsDiscardedSuccessTimePanel,
+					#diskInstantaneousQueueSizeTimePanel,
+				]
+			},
+			{
+				#title:       "Storage Filesystem"
+				#cols:        2
+				#height:      8
+				#isCollapsed: true
+				#panels: [
+					#fileDescriptorTimePanel,
+					#fileNodesFreeTimePanel,
+					#filesystemInReadOnlyErrorTimePanel,
+					#fileNodesSizeTimePanel,
 				]
 			},
 		]
