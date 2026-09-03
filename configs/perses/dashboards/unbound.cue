@@ -1,4 +1,5 @@
-// This is an attempt to copy the Unbound exporter dashboard from Grafana:
+// This is an attempt to copy each panel from Grafana's Unbound exporter dashboard to Perses, with CUE.
+// Layout, queries, panels, text and description are made by the person or people behind the Unbound exporter dashboard:
 // https://grafana.com/grafana/dashboards/21006-unbound/
 // https://github.com/rfmoz/grafana-dashboards
 

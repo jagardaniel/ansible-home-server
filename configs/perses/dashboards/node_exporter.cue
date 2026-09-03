@@ -1,9 +1,18 @@
-// An attempt to copy most panels/queries from Node Exporter Full dashboard.
-// So layout, queries and panels are made by the person or people behind the Grafana Node Exporter Full dashboard:
+// This is an attempt to copy each panel from Grafana's Node Exporter Full dashboard to Perses, with CUE.
+// Layout, queries, panels, text and description are made by the person or people behind the Grafana Node Exporter Full dashboard.
 // https://grafana.com/grafana/dashboards/1860-node-exporter-full/
 // https://github.com/rfmoz/grafana-dashboards.git
 //
 // Promethes exporter used: Official node_exporter - https://github.com/prometheus/node_exporter
+//
+// I'm unable to verify some of the panels since I don't run node exporter with all necessary flags.
+// Perses does not have some of the units used in Grafana and the barChart in Persus looks a bit different than the Bar Gauge panel in Grafana.
+// Since I have copy-pasted panel by panel it is possible that there are some small mistakes.
+// I also haven't figured out how/if you can specify a specific col-width for a panel inside a group. The pressure panel is not included in the overview
+// right now because it look bad if it has the same width as the other statscharts.
+//
+// This file is also very long and it would make sense to move parts of the file to other files. And make it possible to share things like the base format
+// of a timeserieschart between multiple dashboards.
 
 package mydac
 
@@ -16,6 +25,7 @@ import (
 	timeseriesChart "github.com/perses/plugins/timeserieschart/schemas:model"
 	gaugeChart "github.com/perses/plugins/gaugechart/schemas:model"
 	statChart "github.com/perses/plugins/statchart/schemas:model"
+	barChart "github.com/perses/plugins/barchart/schemas:model"
 )
 
 #baseTimeSeriesChart: timeseriesChart & {
@@ -527,7 +537,6 @@ import (
 	}
 }
 
-// Guest CPU usage query not included from the Grafana panel
 #CPUTimePanel: panelBuilder & {
 	spec: {
 		display: {
@@ -610,6 +619,15 @@ import (
 					spec: {
 						query:            #"sum(rate(node_cpu_seconds_total{mode="idle",instance="$instance",job="$job"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{instance="$instance",job="$job"}) by (cpu)))"#
 						seriesNameFormat: "Idle - Waiting for something to happen"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"sum by(instance) (rate(node_cpu_guest_seconds_total{instance="$instance",job="$job"}[$__rate_interval])) / on(instance) group_left sum by (instance)((rate(node_cpu_seconds_total{instance="$instance",job="$job"}[$__rate_interval]))) > 0"#
+						seriesNameFormat: "Guest CPU usage"
 					}
 				}
 			},
@@ -3101,6 +3119,1681 @@ import (
 	}
 }
 
+#networkTrafficByPacketsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Network Traffic by Packets"
+			description: "Number of network packets received and transmitted per second, by interface"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+					show:  true
+					label: "out (-) / in (+)"
+				}
+				querySettings: [{queryIndex: 1, negativeY: true}] // Tx out
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_receive_packets_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Rx in"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_transmit_packets_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Tx out"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkTrafficErrorsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Network Traffic Errors"
+			description: "Rate of packet-level errors for each network interface. Receive errors may indicate physical or driver issues; transmit errors may reflect collisions or hardware faults"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+					show:  true
+					label: "out (-) / in (+)"
+				}
+				querySettings: [{queryIndex: 1, negativeY: true}] // Tx out
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_receive_errs_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Rx in"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_transmit_errs_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Tx out"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkTrafficDropTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Network Traffic Drop"
+			description: "Rate of dropped packets per network interface. Receive drops can indicate buffer overflow or driver issues; transmit drops may result from outbound congestion or queuing limits"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+					show:  true
+					label: "out (-) / in (+)"
+				}
+				querySettings: [{queryIndex: 1, negativeY: true}] // Tx out
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_receive_drop_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Rx in"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_transmit_drop_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Tx out"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkTrafficCompressedTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Network Traffic Compressed"
+			description: "Rate of compressed network packets received and transmitted per interface. These are common in low-bandwidth or special interfaces like PPP or SLIP"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+					show:  true
+					label: "out (-) / in (+)"
+				}
+				querySettings: [{queryIndex: 1, negativeY: true}] // Tx out
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_receive_compressed_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Rx in"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_transmit_compressed_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Tx out"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkTrafficMulticastTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Network Traffic Multicast"
+			description: "Rate of incoming multicast packets received per network interface. Multicast is used by protocols such as mDNS, SSDP, and some streaming or cluster services"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_receive_multicast_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Rx in"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkTrafficNoHandlerTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Network Traffic NoHandler"
+			description: "Rate of received packets that could not be processed due to missing protocol or handler in the kernel. May indicate unsupported traffic or misconfiguration"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_receive_nohandler_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Rx in"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkTrafficFrameTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Network Traffic Frame"
+			description: "Rate of frame errors on received packets, typically caused by physical layer issues such as bad cables, duplex mismatches, or hardware problems"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_receive_frame_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Rx in"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkTrafficFifoTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Network Traffic Fifo"
+			description: "Tracks FIFO buffer overrun errors on network interfaces. These occur when incoming or outgoing packets are dropped due to queue or buffer overflows, often indicating congestion or hardware limits"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+					show:  true
+					label: "out (-) / in (+)"
+				}
+				querySettings: [{queryIndex: 1, negativeY: true}] // Tx out
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_receive_fifo_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Rx in"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_transmit_fifo_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Tx out"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkTrafficCollisionTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Network Traffic Collision"
+			description: "Rate of packet collisions detected during transmission. Mostly relevant on half-duplex or legacy Ethernet networks"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+				}
+				querySettings: [{queryIndex: 0, negativeY: true}] // Tx out
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_transmit_colls_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Tx out"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkTrafficCarrierErrorsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Network Traffic Carrier Errors"
+			description: "Rate of carrier errors during transmission. These typically indicate physical layer issues like faulty cabling or duplex mismatches"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_network_transmit_carrier_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "{{ device }} - Tx out"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkARPEntriesTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "ARP Entries"
+			description: "Number of ARP entries per interface. Useful for detecting excessive ARP traffic or table growth due to scanning or misconfiguration"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_arp_entries{instance="$instance",job="$job"}"#
+						seriesNameFormat: "{{ device }} ARP Table"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkNFConntrackTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "NF Conntrack"
+			description: "Current and maximum connection tracking entries used by Netfilter (nf_conntrack). High usage approaching the limit may cause packet drops or connection issues"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+				querySettings: [{queryIndex: 1, colorMode: "fixed", colorValue: "#EA4747", lineStyle: "dashed", areaOpacity: 0}] // NF conntrack limit
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_nf_conntrack_entries{instance="$instance",job="$job"}"#
+						seriesNameFormat: "NF conntrack entries"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_nf_conntrack_entries_limit{instance="$instance",job="$job"}"#
+						seriesNameFormat: "NF conntrack limit"
+					}
+				}
+			},
+		]
+	}
+}
+
+// Perses does not have unit type for Yes/No. 1/0 being used instead.
+#networkOperationalStatusTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Network Operational Status"
+			description: "Operational and physical link status of each network interface. Values are Yes for 'up' or link present, and No for 'down' or no carrier"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_network_carrier{instance="$instance",job="$job"}"#
+						seriesNameFormat: "{{ device }} - Physical link"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkSpeedBarPanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Speed"
+			description: "Maximum speed of each network interface as reported by the operating system. This is a static hardware capability, not current throughput"
+		}
+		plugin: barChart & {
+			spec: {
+				format: unit: "decbits/sec"
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_network_speed_bytes{instance="$instance",job="$job"} * 8"#
+						seriesNameFormat: "{{ device }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkMTUBarPanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "MTU"
+			description: "MTU (Maximum Transmission Unit) in bytes for each network interface. Affects packet size and transmission efficiency"
+		}
+		plugin: barChart & {
+			spec: {
+				format: unit: "decimal"
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_network_mtu_bytes{instance="$instance",job="$job"}"#
+						seriesNameFormat: "{{ device }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkSockstatTCPTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Sockstat TCP"
+			description: "Tracks TCP socket usage and memory per node"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_TCP_alloc{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Allocated Sockets"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_TCP_inuse{instance="$instance",job="$job"}"#
+						seriesNameFormat: "In-Use Sockets"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_TCP_orphan{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Orphaned Sockets"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_TCP_tw{instance="$instance",job="$job"}"#
+						seriesNameFormat: "TIME_WAIT Sockets"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkSockstatUDPTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Sockstat UDP"
+			description: "Number of UDP and UDPLite sockets currently in use"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_UDPLITE_inuse{instance="$instance",job="$job"}"#
+						seriesNameFormat: "UDPLite - In-Use Sockets"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_UDP_inuse{instance="$instance",job="$job"}"#
+						seriesNameFormat: "UDP - In-Use Sockets"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkSockstatUsedTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Sockstat Used"
+			description: "Total number of sockets currently in use across all protocols (TCP, UDP, UNIX, etc.), as reported by /proc/net/sockstat"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_sockets_used{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Total sockets"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkSockstatFRAGRAWTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Sockstat FRAG / RAW"
+			description: "Number of FRAG and RAW sockets currently in use. RAW sockets are used for custom protocols or tools like ping; FRAG sockets are used internally for IP packet defragmentation"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_FRAG_inuse{instance="$instance",job="$job"}"#
+						seriesNameFormat: "FRAG - In-Use Sockets"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_RAW_inuse{instance="$instance",job="$job"}"#
+						seriesNameFormat: "RAW - In-Use Sockets"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkSockstatMemorySizeTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Sockstat Memory Size"
+			description: "Kernel memory used by TCP, UDP, and IP fragmentation buffers"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "bytes"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_TCP_mem_bytes{instance="$instance",job="$job"}"#
+						seriesNameFormat: "TCP"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_UDP_mem_bytes{instance="$instance",job="$job"}"#
+						seriesNameFormat: "UDP"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_FRAG_memory{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Fragmentation"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkSockstatAverageSocketMemoryTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Sockstat Average Socket Memory"
+			description: "Average memory used per socket (TCP/UDP). Helps tune net.ipv4.tcp_rmem / tcp_wmem"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "bytes"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"(node_sockstat_TCP_inuse{instance="$instance",job="$job"} > bool 0) * (node_sockstat_TCP_mem_bytes{instance="$instance",job="$job"} / node_sockstat_TCP_inuse{instance="$instance",job="$job"})"#
+						seriesNameFormat: "TCP"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"(node_sockstat_UDP_inuse{instance="$instance",job="$job"} > bool 0) * (node_sockstat_UDP_mem_bytes{instance="$instance",job="$job"} / node_sockstat_UDP_inuse{instance="$instance",job="$job"})"#
+						seriesNameFormat: "UDP"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkSockstatKernelMemoryPagesTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "TCP/UDP Kernel Buffer Memory Pages"
+			description: "TCP/UDP socket memory usage in kernel (in pages)"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_TCP_mem{instance="$instance",job="$job"}"#
+						seriesNameFormat: "TCP"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_sockstat_UDP_mem{instance="$instance",job="$job"}"#
+						seriesNameFormat: "UDP"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkSofnetPacketsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Softnet Packets"
+			description: "Packets processed and dropped by the softnet network stack per CPU. Drops may indicate CPU saturation or network driver limitations"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+					show:  true
+					label: "drop (-) / process (+)"
+				}
+				querySettings: [{queryIndex: 1, negativeY: true}] // CPU Dropped
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_softnet_processed_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "CPU {{cpu}} - Processed"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_softnet_dropped_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "CPU {{cpu}} - Dropped"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkSofnetOutOfQuotaTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Softnet Out of Quota"
+			description: "How often the kernel was unable to process all packets in the softnet queue before time ran out. Frequent squeezes may indicate CPU contention or driver inefficiency"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "events/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_softnet_times_squeezed_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "CPU {{cpu}} - Times Squeezed"
+					}
+				}
+			},
+		]
+	}
+}
+
+#networkSofnetRPSTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Softnet RPS"
+			description: "Tracks the number of packets processed or dropped by Receive Packet Steering (RPS), a mechanism to distribute packet processing across CPUs"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+				}
+				querySettings: [{queryIndex: 1, negativeY: true, colorMode: "fixed", colorValue: "#EA4747"}] // CPU Dropped
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_softnet_received_rps_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "CPU {{cpu}} - Processed"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_softnet_flow_limit_count_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "CPU {{cpu}} - Dropped"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatIPOctetsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Netstat IP In / Out Octets"
+			description: "Rate of octets sent and received at the IP layer, as reported by /proc/net/netstat"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decbytes/sec"
+					show:  true
+					label: "out (-) / in (+)"
+				}
+				querySettings: [{queryIndex: 1, negativeY: true}] // IP Tx out
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_IpExt_InOctets{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "IP Rx in"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_IpExt_OutOctets{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "IP Tx out"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatTCPTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "TCP In / Out"
+			description: "Rate of TCP segments sent and received per second, including data and control segments"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+					show:  true
+					label: "out (-) / in (+)"
+				}
+				querySettings: [{queryIndex: 1, negativeY: true}] // IP Tx out
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Tcp_InSegs{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "TCP Rx in"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Tcp_OutSegs{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "TCP Tx out"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatUDPTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "UDP In / Out"
+			description: "Rate of UDP datagrams sent and received per second, based on /proc/net/netstat"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+					show:  true
+					label: "out (-) / in (+)"
+				}
+				querySettings: [{queryIndex: 1, negativeY: true}] // IP Tx out
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Udp_InDatagrams{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "UDP Rx in"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Udp_OutDatagrams{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "UDP Tx out"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatICMPTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "ICMP In / Out"
+			description: "Number of ICMP messages sent and received per second, including error and control messages"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+					show:  true
+					label: "out (-) / in (+)"
+				}
+				querySettings: [{queryIndex: 1, negativeY: true}] // IP Tx out
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Icmp_InMsgs{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "ICMP Rx in"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Icmp_OutMsgs{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "ICMP Tx out"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatTCPErrorsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "TCP Errors"
+			description: "Tracks various TCP error and congestion-related events, including retransmissions, timeouts, dropped connections, and buffer issues"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_TcpExt_ListenOverflows{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "Listen Overflows"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_TcpExt_ListenDrops{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "Listen Drops"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_TcpExt_TCPSynRetrans{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "SYN Retransmits"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Tcp_RetransSegs{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "Segment Retransmits"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Tcp_InErrs{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "Receive Errors"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Tcp_OutRsts{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "RST Sent"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_TcpExt_TCPRcvQDrop{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "Receive Queue Drops"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_TcpExt_TCPOFOQueue{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "Out-of-order Queued"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_TcpExt_TCPTimeouts{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "TCP Timeouts"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatUDPErrorsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "UDP Errors"
+			description: "Rate of UDP and UDPLite datagram delivery errors, including missing listeners, buffer overflows, and protocol-specific issues"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Udp_InErrors{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "UDP Rx in Errors"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Udp_NoPorts{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "UDP No Listener"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_UdpLite_InErrors{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "UDPLite Rx in Errors"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Udp_RcvbufErrors{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "UDP Rx in Buffer Errors"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Udp_SndbufErrors{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "UDP Tx out Buffer Errors"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatICMPErrorsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "ICMP Errors"
+			description: "Rate of incoming ICMP messages that contained protocol-specific errors, such as bad checksums or invalid lengths"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "packets/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Icmp_InErrors{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "ICMP Rx In"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatTCPSynCookieTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "TCP SynCookie"
+			description: "Rate of TCP SYN cookies sent, validated, and failed. These are used to protect against SYN flood attacks and manage TCP handshake resources under load"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "events/sec"
+				}
+				querySettings: [{queryIndex: 0, colorMode: "fixed", colorValue: "#EA4747"}] // SYN Cookies Failed
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_TcpExt_SyncookiesFailed{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "SYN Cookies Failed"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_TcpExt_SyncookiesRecv{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "SYN Cookies Validated"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_TcpExt_SyncookiesSent{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "SYN Cookies Sent"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatTCPConnectionsTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "TCP Connections"
+			description: "Number of currently established TCP connections and the system's max supported limit. On Linux, MaxConn may return -1 to indicate a dynamic/unlimited configuration"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+				querySettings: [{queryIndex: 1, colorMode: "fixed", colorValue: "#EA4747"}] // Max Connections
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_netstat_Tcp_CurrEstab{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Current Connections"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_netstat_Tcp_MaxConn{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Max Connections"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatUDPQueueTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "UDP Queue"
+			description: "Number of UDP packets currently queued in the receive (RX) and transmit (TX) buffers. A growing queue may indicate a bottleneck"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_udp_queues{instance="$instance",job="$job",ip="v4",queue="rx"}"#
+						seriesNameFormat: "UDP Rx in Queue"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_udp_queues{instance="$instance",job="$job",ip="v4",queue="tx"}"#
+						seriesNameFormat: "UDP Tx out Queue"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatTCPDirectTransitionTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "TCP Direct Transition"
+			description: "Rate of TCP connection initiations per second. 'Active' opens are initiated by this host. 'Passive' opens are accepted from incoming connections"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "events/sec"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Tcp_ActiveOpens{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "Active Opens"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(node_netstat_Tcp_PassiveOpens{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "Passive Opens"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatTCPStatPersistentTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "TCP Stat Persistent"
+			description: "Number of TCP sockets in key connection states. Requires the --collector.tcpstat flag on node_exporter"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="established",instance="$instance",job="$job"}"#
+						seriesNameFormat: "Established"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="fin_wait2",instance="$instance",job="$job"}"#
+						seriesNameFormat: "FIN_WAIT2"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="listen",instance="$instance",job="$job"}"#
+						seriesNameFormat: "Listen"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="time_wait",instance="$instance",job="$job"}"#
+						seriesNameFormat: "TIME_WAIT"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="close_wait", instance="$instance", job="$job"}"#
+						seriesNameFormat: "CLOSE_WAIT"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatTCPStatTransientTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "TCP Stat Transient"
+			description: "Transient TCP connection states. These are typically short-lived during connection establishment and teardown"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="syn_sent",instance="$instance",job="$job"}"#
+						seriesNameFormat: "SYN_SENT"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="syn_recv",instance="$instance",job="$job"}"#
+						seriesNameFormat: "SYN_RECV"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="fin_wait1",instance="$instance",job="$job"}"#
+						seriesNameFormat: "FIN_WAIT1"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="close",instance="$instance",job="$job"}"#
+						seriesNameFormat: "CLOSE"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="last_ack",instance="$instance",job="$job"}"#
+						seriesNameFormat: "LAST_ACK"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="closing",instance="$instance",job="$job"}"#
+						seriesNameFormat: "CLOSING"
+					}
+				}
+			},
+		]
+	}
+}
+
+#netstatTCPSocketQueueTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "TCP Socket Queue"
+			description: "TCP socket queue sizes. High rx_queued_bytes indicates application not reading fast enough. High tx_queued_bytes indicates network congestion or slow receiver"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "bytes"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="rx_queued_bytes",instance="$instance",job="$job"}"#
+						seriesNameFormat: "RX Queued (waiting to be read)"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_tcp_connection_states{state="tx_queued_bytes",instance="$instance",job="$job"}"#
+						seriesNameFormat: "TX Queued (waiting to be sent)"
+					}
+				}
+			},
+		]
+	}
+}
+
+#exporterScrapeTimeTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Node Exporter Scrape Time"
+			description: "Duration of each individual collector executed during a Node Exporter scrape. Useful for identifying slow or failing collectors"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "seconds"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_scrape_collector_duration_seconds{instance="$instance",job="$job"}"#
+						seriesNameFormat: "{{ collector }}"
+					}
+				}
+			},
+		]
+	}
+}
+
+#exporterCPUUsageTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Exporter Process CPU Usage"
+			description: "Rate of CPU time used by the process exposing this metric (user + system mode)"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "percent-decimal"
+				}
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"rate(process_cpu_seconds_total{instance="$instance",job="$job"}[$__rate_interval])"#
+						seriesNameFormat: "Process CPU Usage"
+					}
+				}
+			},
+		]
+	}
+}
+
+#exporterProcessesMemoryTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Exporter Processes Memory"
+			description: "Tracks the memory usage of the process exposing this metric (e.g., node_exporter), including current virtual memory and maximum virtual memory limit"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "bytes"
+				}
+				querySettings: [{queryIndex: 1, colorMode: "fixed", colorValue: "#EA4747", lineStyle: "dashed", areaOpacity: 0}] // Virtual Memory Limit
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"process_virtual_memory_bytes{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Virtual Memory"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"process_virtual_memory_max_bytes{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Virtual Memory Limit"
+					}
+				}
+			},
+		]
+	}
+}
+
+#exporterFileDescriptorUsageTimePanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Exporter File Descriptor Usage"
+			description: "Number of file descriptors used by the exporter process versus its configured limit"
+		}
+		plugin: #detailedTimeSeriesChart & {
+			spec: {
+				yAxis: {
+					format: unit: "decimal"
+				}
+				querySettings: [{queryIndex: 0, colorMode: "fixed", colorValue: "#EA4747", lineStyle: "dashed", areaOpacity: 0}] // Maximum open
+			}
+		}
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"process_max_fds{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Maximum open file descriptors"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"process_open_fds{instance="$instance",job="$job"}"#
+						seriesNameFormat: "Open file descriptors"
+					}
+				}
+			},
+		]
+	}
+}
+
+#exporterScrapeBarPanel: panelBuilder & {
+	spec: {
+		display: {
+			name:        "Node Exporter Scrape"
+			description: "Shows whether each Node Exporter collector scraped successfully (1 = success, 0 = failure), and whether the textfile collector returned an error."
+		}
+		plugin: barChart
+		queries: [
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"node_scrape_collector_success{instance="$instance",job="$job"}"#
+						seriesNameFormat: "{{ collector }}"
+					}
+				}
+			},
+			{
+				kind: "TimeSeriesQuery"
+				spec: plugin: promQuery & {
+					spec: {
+						query:            #"1 - node_textfile_scrape_error{instance="$instance",job="$job"}"#
+						seriesNameFormat: "textfile"
+					}
+				}
+			},
+		]
+	}
+}
+
 #jobVar: labelValuesVarBuilder & {
 	#name:  "job"
 	#label: "job"
@@ -3126,7 +4819,7 @@ dashboardBuilder & {
 			{
 				#title:  "Quick CPU / Mem / Disk"
 				#cols:   10
-				#height: 4
+				#height: 5
 				#panels: [
 					#CPUBusyGaugePanel,
 					#sysLoadGaugePanel,
@@ -3294,6 +4987,82 @@ dashboardBuilder & {
 					#fileNodesFreeTimePanel,
 					#filesystemInReadOnlyErrorTimePanel,
 					#fileNodesSizeTimePanel,
+				]
+			},
+			{
+				#title:       "Network Traffic"
+				#cols:        2
+				#height:      8
+				#isCollapsed: true
+				#panels: [
+					#networkTrafficByPacketsTimePanel,
+					#networkTrafficErrorsTimePanel,
+					#networkTrafficDropTimePanel,
+					#networkTrafficCompressedTimePanel,
+					#networkTrafficMulticastTimePanel,
+					#networkTrafficNoHandlerTimePanel,
+					#networkTrafficFrameTimePanel,
+					#networkTrafficFifoTimePanel,
+					#networkTrafficCollisionTimePanel,
+					#networkTrafficCarrierErrorsTimePanel,
+					#networkARPEntriesTimePanel,
+					#networkNFConntrackTimePanel,
+					#networkOperationalStatusTimePanel,
+					#networkSpeedBarPanel,
+					#networkMTUBarPanel,
+				]
+			},
+			{
+				#title:       "Network Sockstat"
+				#cols:        2
+				#height:      8
+				#isCollapsed: true
+				#panels: [
+					#networkSockstatTCPTimePanel,
+					#networkSockstatUDPTimePanel,
+					#networkSockstatUsedTimePanel,
+					#networkSockstatFRAGRAWTimePanel,
+					#networkSockstatMemorySizeTimePanel,
+					#networkSockstatAverageSocketMemoryTimePanel,
+					#networkSockstatKernelMemoryPagesTimePanel,
+					#networkSofnetPacketsTimePanel,
+					#networkSofnetOutOfQuotaTimePanel,
+					#networkSofnetRPSTimePanel,
+				]
+			},
+			{
+				#title:       "Network Netstat"
+				#cols:        2
+				#height:      8
+				#isCollapsed: true
+				#panels: [
+					#netstatIPOctetsTimePanel,
+					#netstatTCPTimePanel,
+					#netstatUDPTimePanel,
+					#netstatICMPTimePanel,
+					#netstatTCPErrorsTimePanel,
+					#netstatUDPErrorsTimePanel,
+					#netstatICMPErrorsTimePanel,
+					#netstatTCPSynCookieTimePanel,
+					#netstatTCPConnectionsTimePanel,
+					#netstatUDPQueueTimePanel,
+					#netstatTCPDirectTransitionTimePanel,
+					#netstatTCPStatPersistentTimePanel,
+					#netstatTCPStatTransientTimePanel,
+					#netstatTCPSocketQueueTimePanel,
+				]
+			},
+			{
+				#title:       "Node Exporter"
+				#cols:        2
+				#height:      8
+				#isCollapsed: true
+				#panels: [
+					#exporterScrapeTimeTimePanel,
+					#exporterCPUUsageTimePanel,
+					#exporterProcessesMemoryTimePanel,
+					#exporterFileDescriptorUsageTimePanel,
+					#exporterScrapeBarPanel,
 				]
 			},
 		]
