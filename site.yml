@@ -1,5 +1,4 @@
 ---
-# TODO: Move other roles to a separate playbook as well
 - name: Apply general roles
   hosts: all
   become: true
@@ -8,6 +7,3 @@
     - kea_dhcp4_server
     - prometheus_node_exporter
     - caddy
-
-- name: Import containers playbook
-  import_playbook: containers.yml

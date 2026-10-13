@@ -1,7 +1,0 @@
----
-
-- name: Apply container roles
-  hosts: all
-  become: true
-  roles:
-    - podman
