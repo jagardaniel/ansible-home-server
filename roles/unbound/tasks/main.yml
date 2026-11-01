@@ -15,6 +15,8 @@
       - unbound.conf
   register: default_configs
 
+# If I remember correctly, apt did add back these files after an upgrade. So it would probably be better to use unbound.conf directly and live with the conflict or if we can
+# decide which order unbound applies the configuration files in the unbound.conf.d directory (so our settings from ansible always are set and "overwrites" the settings from the default files).
 - name: Remove default configuration files
   ansible.builtin.file:
     path: "{{ item.path }}"
