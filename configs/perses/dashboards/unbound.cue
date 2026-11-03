@@ -830,7 +830,7 @@ dashboardBuilder & {
 	#project: "home"
 	#display: name: "Unbound"
 	#duration:        "6h"
-	#refreshInterval: "1m"
+	#refreshInterval: "60s"
 	#variables:       [#instanceVar.variable]
 
 	#panelGroups: panelGroupsBuilder & {

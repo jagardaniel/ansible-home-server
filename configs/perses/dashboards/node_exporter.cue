@@ -4811,7 +4811,7 @@ dashboardBuilder & {
 	#project: "home"
 	#display: name: "Node Exporter"
 	#duration:        "12h"
-	#refreshInterval: "1m"
+	#refreshInterval: "60s"
 	#variables:       [#jobVar.variable, #instanceVar.variable]
 
 	#panelGroups: panelGroupsBuilder & {

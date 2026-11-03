@@ -623,7 +623,7 @@ dashboardBuilder & {
 	#project: "home"
 	#display: name: "TeamSpeak 3"
 	#duration:        "12h"
-	#refreshInterval: "1m"
+	#refreshInterval: "60s"
 	#variables:       [#virtualServerVar.variable]
 
 	#panelGroups: panelGroupsBuilder & {
