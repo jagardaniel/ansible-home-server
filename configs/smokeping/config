@@ -1,0 +1,149 @@
+# The Debian package (including the container image used here) splits each section of the smokeping config into individual files.
+# To avoid having to use multiple "Volume=" options in the .container file for each section, or keep the entire /config directory
+# outside the container, just use one file for the entire configuration.
+
+*** General ***
+
+owner    = daniel
+contact  = some@address.nowhere
+mailhost = my.mail.host
+
+cgiurl   = http://localhost/smokeping/smokeping.cgi
+syslogfacility = local0
+
+sendmail = /usr/sbin/ssmtp
+imgcache = /var/cache/smokeping
+imgurl   = cache
+datadir  = /data
+piddir  = /var/run/smokeping
+smokemail = /etc/smokeping/smokemail
+tmail = /etc/smokeping/tmail
+
+
+*** Database ***
+
+step     = 300
+pings    = 20
+
+# consfn mrhb steps total
+
+AVERAGE  0.5   1  1008
+AVERAGE  0.5  12  4320
+    MIN  0.5  12  4320
+    MAX  0.5  12  4320
+AVERAGE  0.5 144   720
+    MAX  0.5 144   720
+    MIN  0.5 144   720
+
+
+*** Presentation ***
+
+template = /etc/smokeping/basepage.html
+charset  = utf-8
+
++ charts
+
+menu = Charts
+title = The most interesting destinations
+
+++ stddev
+sorter = StdDev(entries=>4)
+title = Top Standard Deviation
+menu = Std Deviation
+format = Standard Deviation %f
+
+++ max
+sorter = Max(entries=>5)
+title = Top Max Roundtrip Time
+menu = by Max
+format = Max Roundtrip Time %f seconds
+
+++ loss
+sorter = Loss(entries=>5)
+title = Top Packet Loss
+menu = Loss
+format = Packets Lost %f
+
+++ median
+sorter = Median(entries=>5)
+title = Top Median Roundtrip Time
+menu = by Median
+format = Median RTT %f seconds
+
++ overview
+
+width = 600
+height = 100
+range = 10h
+
++ detail
+
+width = 600
+height = 200
+unison_tolerance = 2
+
+"Last 3 Hours"    3h
+"Last 30 Hours"   30h
+"Last 10 Days"    10d
+"Last 360 Days"   360d
+
+
+*** Probes ***
+
++ FPing
+binary = /usr/sbin/fping
+
++ TraceroutePing
+binary = /usr/bin/traceroute
+
+
+*** Targets ***
+
+probe = FPing
+
+menu = Top
+title = Network Latency Grapher
+remark = Welcome to the SmokePing website.
+
++ Targets
+menu = Targets
+title = Targets
+
+++ OwnitGW
+menu = Ownit GW
+title = Ownit GW (37.46.xx.x) # removed for github
+host = 37.46.xx.x # removed for github
+
+# This is actual my "first hop" when I do a traceroute, even if the host (OwnitGW) above is my actual default gateway. Some magic going on (MPLS?).
+# The device doesn't respond to ICMP packets addressed to it, but do return ICMP TTL_EXCEEDED packets when doing a traceroute. So use tracerouteping probe.
+++ TelenorHop
+probe = TraceroutePing
+menu = Telenor Hop
+title = Telenor Hop (212.105.0.119)
+host = 212.105.0.119
+desthost = ping.sunet.se
+
+++ CloudFlare
+menu = Cloudflare
+title = Cloudflare DNS (1.1.1.1)
+host = 1.1.1.1
+
+++ ObenetGOT
+menu = Obenet Göteborg
+title = Obenet Göteborg (got-shg5.obe.net)
+host = got-shg5.obe.net
+
+++ NetnodLUL
+menu = Netnod Luleå
+title = Netnod Luleå (lul1.ntp.netnod.se)
+host = lul1.ntp.netnod.se
+
+++ ArelionFF
+menu = Arelion Frankfurt
+title = Arelion Frankfurt (ffm-b11.ip.twelve99.net)
+host = ffm-b11.ip.twelve99.net
+
+++ HurricaneNYC
+menu = Hurricane New York
+title = Hurricane New York (tserv1.nyc4.he.net)
+host = tserv1.nyc4.he.net
