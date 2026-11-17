@@ -3,6 +3,10 @@ server:
     interface: {{ interface }}
 {% endfor %}
 
+{% if unbound_ip_freebind %}
+    ip-freebind: yes
+{% endif %}
+
 {% for rule in unbound_access_control %}
     access-control: {{ rule }}
 {% endfor %}

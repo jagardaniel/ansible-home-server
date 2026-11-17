@@ -4,8 +4,14 @@ domain: "{{ vault_domain }}"
 
 # Unbound configuration - forward all DNS queries to Cloudflare
 unbound_interfaces:
-  - 0.0.0.0
-  - ::0
+  - 127.0.0.1
+  - ::1
+  - 192.168.0.1
+
+# After switching to systemd-networkd, some services like unbound fails to start because
+# the LAN address has not been configured when unbound tries to start.
+# This option allows us to bind to an IP address that does not exist yet.
+unbound_ip_freebind: true
 
 unbound_access_control:
   - 192.168.0.0/24 allow
@@ -23,6 +29,9 @@ unbound_local_zones:
     type: static
     records:
       - name: "perses"
+        type: "A"
+        value: "192.168.0.1"
+      - name: "smokeping"
         type: "A"
         value: "192.168.0.1"
 
