@@ -2,19 +2,22 @@
 
 This is my setup for a basic home router with nftables, systemd-networkd and unbound. The server is running Debian Stable and uses two network interfaces, eno1 (WAN) and eno2 (LAN). My ISP only supports IPv4.
 
-### Enable IP forwarding for IPv4
-
-**/etc/sysctl.d/local.conf**
-
-```ini
-net.ipv4.ip_forward = 1
-```
-
-This can also be set with systemd-networkd in `/etc/systemd/networkd.conf.d/yourconfig.conf` with `IPv4Forwarding=yes` in the `[Network]` section.
-
 ### systemd-networkd
 
-I recently switched to systemd-networkd for the network configuration. It feels like a more modern option to ifupdown (which is default on Debian installations without GUI) and also has a built-in DHCP client and server. It can also do DHCPv6 + prefix delegation and advertise prefixes via Router Advertisements.
+I recently switched to systemd-networkd for the network configuration. It feels like a more modern option to ifupdown (which is default on Debian installations without GUI) and also has a built-in DHCP client and server. It can also do DHCPv6 + prefix delegation and advertise prefixes via Router Advertisements if needed.
+
+**/etc/systemd/networkd.conf.d/10-forwarding.conf**
+
+```ini
+[Network]
+IPv4Forwarding=yes
+```
+
+Enable global IPv4 forwarding. It will modify related sysctl options for us.
+
+One thing I noticed regarding IPv6 forwarding, which also is mentioned under the `IPv6AcceptRA` option in the manual, is that systemd-networkd uses their own userspace implementation of the IPv6 RA protocol.
+
+If you enable IPv6 forwarding with sysctl, systemd-networkd will accept RAs on all its managed interfaces. If you enable forwarding with `IPv6Forwarding=yes` in systemd-networkd instead, it will behave similar to the kernel where we need to configure an interface to accept RAs if forwarding is enabled.
 
 **/etc/systemd/network/10-wan.network**
 
@@ -33,13 +36,13 @@ UseDNS=no
 DHCPv6Client=no
 ```
 
-I use `UseDNS=no` because my `/etc/resolv.conf` just points to `127.0.0.1`. Even if systemd-networkd doesn't modify this file with this setting set to yes, it still add routes to the DNS servers in the routing table which feels unnecessary.
+I use `UseDNS=no` because my `/etc/resolv.conf` just points to `127.0.0.1`. Even if systemd-networkd never modifies this file, it still add routes to the DNS servers in the routing table which feels unnecessary.
 
-My ISP doesn't support IPv6 to customers but it still sends out IPv6 Router Advertisements. I accept it mainly because I can and hope that the default gateway is going to become reachable some day. `IPv6AcceptRA=yes` is already the default behavior (unless IPv6Forwarding is enabled) but this makes it more clear, especially since I have it set to "no" on the LAN interface.
+My ISP doesn't support IPv6 to customers but it still sends out IPv6 Router Advertisements and is added as the default gateway. It is not reachable so it doesn't really matter, but this is mostly to see if anything changes some day.
 
-`DHCPv6Client=no` to stop trigger the start of the DHCPv6 client from Router Advertisements with "managed" or "other configuration" flag. Could probably be removed if/when actual IPv6 support happens.
+`IPv6AcceptRA=yes` is already the default behavior (unless IPv6Forwarding is enabled) but this makes it a bit more clear.
 
-One note about IPv6 forwarding and Router Advertisements. Interfaces will not accept RAs if you enable IPv6 forwarding in the kernel (`net.ipv6.conf.all.forwarding = 1`). You have to enable it with `net.ipv6.conf.eno1.accept_ra = 2` for example. systemd-networkd seems to ignore this setting so it will accept RAs on all networkd managed interfaces even when IPv6 forwarding is enabled. It will not accept them if `IPv6Forwarding=yes` is set, so maybe it makes more sense to set IPv6 forwarding with systemd-networkd instead of sysctl if you want to get similar behavior.
+`DHCPv6Client=no` is to stop trigger the start of the DHCPv6 client from Router Advertisements with "managed" or "other configuration" flag. Could probably be removed if/when actual IPv6 support happens.
 
 **/etc/systemd/network/20-lan.network**
 
